@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duplicate Detection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        h2 { color: #333; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Task Duplicate Detection Test Suite</h1>
+    <div id="test-results"></div>
+    
+    <!-- Mock DOM elements for TaskManager -->
+    <div id="task-widget" style="display: none;">
+        <input type="text" id="task-input" placeholder="Enter task">
+        <button id="add-task-btn">Add Task</button>
+        <ul id="task-list"></ul>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Test utilities
+        function assert(condition, message) {
+            if (condition) {
+                return `<div class="pass">✓ ${message}</div>`;
+            } else {
+                return `<div class="fail">✗ ${message}</div>`;
+            }
+        }
+
+        function runDuplicateTests() {
+            const results = [];
+            
+            // Clear localStorage before tests
+            localStorage.clear();
+
+            // Test 1: Basic duplicate detection (exact match)
+            results.push('<div class="test-section"><h2>Test 1: Basic Duplicate Detection</h2>');
+            const taskManager = new TaskManager(document.getElementById('task-widget'));
+            taskManager.init();
+
+            const task1Id = taskManager.addTask('Test Task');
+            const task2Id = taskManager.addTask('Test Task'); // Exact duplicate
+
+            results.push(assert(task1Id !== null, 'First task added successfully'));
+            results.push(assert(task2Id === null, 'Duplicate task rejected (Requirement 4.1, 4.2)'));
+            results.push(assert(taskManager.tasks.length === 1, 'Only one task in array'));
+            results.push('</div>');
+
+            // Test 2: Case-insensitive duplicate detection (Requirement 4.3)
+            results.push('<div class="test-section"><h2>Test 2: Case-Insensitive Duplicate Detection</h2>');
+            const task3Id = taskManager.addTask('test task'); // Different case
+            const task4Id = taskManager.addTask('TEST TASK'); // Different case
+            const task5Id = taskManager.addTask('TeSt TaSk'); // Mixed case
+
+            results.push(assert(task3Id === null, 'Lowercase duplicate rejected'));
+            results.push(assert(task4Id === null, 'Uppercase duplicate rejected'));
+            results.push(assert(task5Id === null, 'Mixed case duplicate rejected'));
+            results.push(assert(taskManager.tasks.length === 1, 'Still only one task in array'));
+            results.push('</div>');
+
+            // Test 3: Whitespace trimming (Requirement 4.4)
+            results.push('<div class="test-section"><h2>Test 3: Whitespace Trimming Before Duplicate Check</h2>');
+            const task6Id = taskManager.addTask('  Test Task  '); // Leading/trailing spaces
+            const task7Id = taskManager.addTask('Test Task   '); // Trailing spaces
+            const task8Id = taskManager.addTask('   Test Task'); // Leading spaces
+
+            results.push(assert(task6Id === null, 'Task with leading/trailing spaces rejected'));
+            results.push(assert(task7Id === null, 'Task with trailing spaces rejected'));
+            results.push(assert(task8Id === null, 'Task with leading spaces rejected'));
+            results.push(assert(taskManager.tasks.length === 1, 'Still only one task in array'));
+            results.push('</div>');
+
+            // Test 4: Allow non-duplicate tasks (Requirement 4.5)
+            results.push('<div class="test-section"><h2>Test 4: Allow Non-Duplicate Tasks</h2>');
+            const task9Id = taskManager.addTask('Different Task');
+            const task10Id = taskManager.addTask('Another Task');
+            const task11Id = taskManager.addTask('Unique Task');
+
+            results.push(assert(task9Id !== null, 'Different task added successfully'));
+            results.push(assert(task10Id !== null, 'Another task added successfully'));
+            results.push(assert(task11Id !== null, 'Unique task added successfully'));
+            results.push(assert(taskManager.tasks.length === 4, 'All unique tasks added (total: 4)'));
+            results.push('</div>');
+
+            // Test 5: Verify task texts are properly trimmed
+            results.push('<div class="test-section"><h2>Test 5: Task Text Trimming</h2>');
+            const taskTexts = taskManager.tasks.map(t => t.text);
+            const hasUntrimmedText = taskTexts.some(text => text !== text.trim());
+            
+            results.push(assert(!hasUntrimmedText, 'All task texts are properly trimmed'));
+            results.push(`<pre>Task texts: ${JSON.stringify(taskTexts, null, 2)}</pre>`);
+            results.push('</div>');
+
+            // Test 6: Test with empty and whitespace-only strings
+            results.push('<div class="test-section"><h2>Test 6: Empty and Whitespace-Only Tasks</h2>');
+            const emptyId = taskManager.addTask('');
+            const whitespaceId = taskManager.addTask('   ');
+            const tabsId = taskManager.addTask('\t\t');
+
+            results.push(assert(emptyId === null, 'Empty string task rejected'));
+            results.push(assert(whitespaceId === null, 'Whitespace-only task rejected'));
+            results.push(assert(tabsId === null, 'Tabs-only task rejected'));
+            results.push(assert(taskManager.tasks.length === 4, 'Task count unchanged'));
+            results.push('</div>');
+
+            // Test 7: Test showErrorMessage method exists
+            results.push('<div class="test-section"><h2>Test 7: Error Message Method</h2>');
+            const hasShowErrorMethod = typeof taskManager.showErrorMessage === 'function';
+            results.push(assert(hasShowErrorMethod, 'showErrorMessage method exists'));
+            
+            if (hasShowErrorMethod) {
+                // Test that it doesn't throw an error
+                try {
+                    taskManager.showErrorMessage('Test error message');
+                    results.push(assert(true, 'showErrorMessage executes without error'));
+                } catch (e) {
+                    results.push(assert(false, `showErrorMessage throws error: ${e.message}`));
+                }
+            }
+            results.push('</div>');
+
+            // Display results
+            document.getElementById('test-results').innerHTML = results.join('');
+        }
+
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', runDuplicateTests);
+    </script>
+</body>
+</html>

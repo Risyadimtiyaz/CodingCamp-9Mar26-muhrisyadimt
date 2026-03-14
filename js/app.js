@@ -133,7 +133,8 @@ class TimeUtils {
 
 const STORAGE_KEYS = {
   TASKS: 'productivity-dashboard-tasks',
-  LINKS: 'productivity-dashboard-links'
+  LINKS: 'productivity-dashboard-links',
+  CUSTOM_NAME: 'productivity-dashboard-custom-name'
 };
 
 // ============================================================================
@@ -141,8 +142,8 @@ const STORAGE_KEYS = {
 // ============================================================================
 
 /**
- * GreetingWidget - Displays current time, date, and time-based greeting
- * Updates automatically every minute
+ * GreetingWidget - Displays current time, date, and time-based greeting with custom name personalization
+ * Updates automatically every minute and supports custom name input and persistence
  */
 class GreetingWidget {
   /**
@@ -155,6 +156,20 @@ class GreetingWidget {
     this.dateDisplay = null;
     this.greetingDisplay = null;
     this.updateInterval = null;
+    
+    // Custom name elements
+    this.nameDisplay = null;
+    this.customNameSpan = null;
+    this.editNameBtn = null;
+    this.nameInputContainer = null;
+    this.customNameInput = null;
+    this.saveNameBtn = null;
+    this.cancelNameBtn = null;
+    this.addNameBtn = null;
+    
+    // Custom name state
+    this.customName = null;
+    this.isEditingName = false;
   }
 
   /**
@@ -165,14 +180,221 @@ class GreetingWidget {
     this.timeDisplay = document.getElementById('time-display');
     this.dateDisplay = document.getElementById('date-display');
     this.greetingDisplay = document.getElementById('greeting-message');
+    
+    // Get custom name elements
+    this.nameDisplay = document.getElementById('name-display');
+    this.customNameSpan = document.getElementById('custom-name');
+    this.editNameBtn = document.getElementById('edit-name-btn');
+    this.nameInputContainer = document.getElementById('name-input-container');
+    this.customNameInput = document.getElementById('custom-name-input');
+    this.saveNameBtn = document.getElementById('save-name-btn');
+    this.cancelNameBtn = document.getElementById('cancel-name-btn');
+    this.addNameBtn = document.getElementById('add-name-btn');
 
+    // Set up custom name event listeners
+    this.setupNameEventListeners();
+    
+    // Load saved custom name
+    this.loadCustomName();
+    
     // Initial update
     this.updateTime();
+    this.updateNameDisplay();
 
     // Set up automatic updates every minute (60000ms)
     this.updateInterval = setInterval(() => {
       this.updateTime();
     }, 60000);
+  }
+
+  /**
+   * Set up event listeners for custom name functionality
+   */
+  setupNameEventListeners() {
+    // Add name button
+    if (this.addNameBtn) {
+      this.addNameBtn.addEventListener('click', () => {
+        this.showNameInput();
+      });
+    }
+
+    // Edit name button
+    if (this.editNameBtn) {
+      this.editNameBtn.addEventListener('click', () => {
+        this.showNameInput();
+      });
+    }
+
+    // Save name button
+    if (this.saveNameBtn) {
+      this.saveNameBtn.addEventListener('click', () => {
+        this.saveCustomName();
+      });
+    }
+
+    // Cancel name button
+    if (this.cancelNameBtn) {
+      this.cancelNameBtn.addEventListener('click', () => {
+        this.cancelNameEdit();
+      });
+    }
+
+    // Enter key to save, Escape key to cancel
+    if (this.customNameInput) {
+      this.customNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.saveCustomName();
+        }
+      });
+
+      this.customNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          this.cancelNameEdit();
+        }
+      });
+    }
+  }
+
+  /**
+   * Load custom name from local storage
+   */
+  loadCustomName() {
+    this.customName = LocalStorageService.load(STORAGE_KEYS.CUSTOM_NAME);
+  }
+
+  /**
+   * Save custom name to local storage
+   */
+  saveCustomNameToStorage() {
+    LocalStorageService.save(STORAGE_KEYS.CUSTOM_NAME, this.customName);
+  }
+
+  /**
+   * Show the name input interface
+   */
+  showNameInput() {
+    if (this.isEditingName) {
+      return; // Already editing
+    }
+
+    this.isEditingName = true;
+
+    // Hide other elements
+    if (this.nameDisplay) {
+      this.nameDisplay.style.display = 'none';
+    }
+    if (this.addNameBtn) {
+      this.addNameBtn.style.display = 'none';
+    }
+
+    // Show input container
+    if (this.nameInputContainer) {
+      this.nameInputContainer.style.display = 'flex';
+    }
+
+    // Set current name in input
+    if (this.customNameInput) {
+      this.customNameInput.value = this.customName || '';
+      this.customNameInput.focus();
+      this.customNameInput.select();
+    }
+  }
+
+  /**
+   * Save the custom name
+   */
+  saveCustomName() {
+    if (!this.customNameInput) {
+      return;
+    }
+
+    const newName = this.customNameInput.value.trim();
+    
+    // Validate input
+    if (!newName) {
+      alert('Please enter a name');
+      this.customNameInput.focus();
+      return;
+    }
+
+    if (newName.length > 50) {
+      alert('Name must be 50 characters or less');
+      this.customNameInput.focus();
+      return;
+    }
+
+    // Sanitize input (basic HTML escaping)
+    const sanitizedName = this.sanitizeInput(newName);
+
+    // Update custom name
+    this.customName = sanitizedName;
+    this.saveCustomNameToStorage();
+
+    // Exit edit mode
+    this.exitNameEditMode();
+
+    // Update displays
+    this.updateNameDisplay();
+    this.updateTime(); // Update greeting with new name
+  }
+
+  /**
+   * Cancel name editing
+   */
+  cancelNameEdit() {
+    this.exitNameEditMode();
+  }
+
+  /**
+   * Exit name edit mode and restore display
+   */
+  exitNameEditMode() {
+    this.isEditingName = false;
+
+    // Hide input container
+    if (this.nameInputContainer) {
+      this.nameInputContainer.style.display = 'none';
+    }
+
+    // Show appropriate display
+    this.updateNameDisplay();
+  }
+
+  /**
+   * Update the name display based on current state
+   */
+  updateNameDisplay() {
+    if (this.customName) {
+      // Show name display with edit button
+      if (this.nameDisplay) {
+        this.nameDisplay.style.display = 'flex';
+      }
+      if (this.customNameSpan) {
+        this.customNameSpan.textContent = this.customName;
+      }
+      if (this.addNameBtn) {
+        this.addNameBtn.style.display = 'none';
+      }
+    } else {
+      // Show add name button
+      if (this.nameDisplay) {
+        this.nameDisplay.style.display = 'none';
+      }
+      if (this.addNameBtn) {
+        this.addNameBtn.style.display = 'inline-flex';
+      }
+    }
+  }
+
+  /**
+   * Sanitize user input to prevent XSS
+   * @param {string} input - User input to sanitize
+   * @returns {string} - Sanitized input
+   */
+  sanitizeInput(input) {
+    const div = document.createElement('div');
+    div.textContent = input;
+    return div.innerHTML;
   }
 
   /**
@@ -191,9 +413,24 @@ class GreetingWidget {
       this.dateDisplay.textContent = this.formatDate(now);
     }
     
-    // Update greeting message
+    // Update greeting message with custom name
     if (this.greetingDisplay) {
-      this.greetingDisplay.textContent = this.getTimeBasedGreeting(now);
+      this.greetingDisplay.textContent = this.getPersonalizedGreeting(now);
+    }
+  }
+
+  /**
+   * Get personalized greeting message with custom name
+   * @param {Date} date - Date object to evaluate
+   * @returns {string} - Personalized greeting message
+   */
+  getPersonalizedGreeting(date) {
+    const baseGreeting = this.getTimeBasedGreeting(date);
+    
+    if (this.customName) {
+      return `${baseGreeting}, ${this.customName}!`;
+    } else {
+      return baseGreeting;
     }
   }
 
@@ -250,17 +487,20 @@ class FocusTimer {
    */
   constructor(containerElement) {
     this.container = containerElement;
-    this.duration = 1500; // 25 minutes in seconds
+    this.defaultDuration = 1500; // 25 minutes in seconds
+    this.duration = 1500; // Current duration in seconds
     this.remainingTime = 1500;
     this.isRunning = false;
     this.intervalId = null;
-    
+
     // DOM elements
     this.displayElement = null;
     this.startButton = null;
     this.stopButton = null;
     this.resetButton = null;
     this.statusElement = null;
+    this.durationInput = null;
+    this.durationError = null;
   }
 
   /**
@@ -273,6 +513,11 @@ class FocusTimer {
     this.stopButton = document.getElementById('timer-stop');
     this.resetButton = document.getElementById('timer-reset');
     this.statusElement = document.getElementById('timer-status');
+    this.durationInput = document.getElementById('timer-duration-input');
+    this.durationError = document.getElementById('timer-duration-error');
+
+    // Load saved duration from storage
+    this.loadCustomDuration();
 
     // Set up event listeners
     if (this.startButton) {
@@ -284,9 +529,131 @@ class FocusTimer {
     if (this.resetButton) {
       this.resetButton.addEventListener('click', () => this.reset());
     }
+    if (this.durationInput) {
+      this.durationInput.addEventListener('input', () => this.onDurationChange());
+      this.durationInput.addEventListener('blur', () => this.validateAndSaveDuration());
+    }
 
     // Initial display update
     this.updateDisplay();
+  }
+
+  /**
+   * Load custom duration from local storage
+   */
+  loadCustomDuration() {
+    try {
+      const savedDuration = LocalStorageService.load('timer-duration');
+      if (savedDuration && typeof savedDuration === 'number' && savedDuration >= 1 && savedDuration <= 120) {
+        this.setDuration(savedDuration);
+      } else {
+        // Use default duration (25 minutes)
+        this.setDuration(25);
+      }
+    } catch (error) {
+      console.warn('Failed to load timer duration from storage:', error);
+      this.setDuration(25);
+    }
+  }
+
+  /**
+   * Save custom duration to local storage
+   */
+  saveCustomDuration(minutes) {
+    try {
+      LocalStorageService.save('timer-duration', minutes);
+    } catch (error) {
+      console.error('Failed to save timer duration to storage:', error);
+    }
+  }
+
+  /**
+   * Set timer duration in minutes
+   * @param {number} minutes - Duration in minutes (1-120)
+   */
+  setDuration(minutes) {
+    this.duration = minutes * 60; // Convert to seconds
+    this.remainingTime = this.duration;
+
+    // Update input field
+    if (this.durationInput) {
+      this.durationInput.value = minutes;
+    }
+
+    // Update display
+    this.updateDisplay();
+  }
+
+  /**
+   * Handle duration input change
+   */
+  onDurationChange() {
+    // Clear any existing error message
+    this.clearDurationError();
+  }
+
+  /**
+   * Validate and save duration when input loses focus
+   */
+  validateAndSaveDuration() {
+    const inputValue = this.durationInput.value.trim();
+
+    // Clear any existing error
+    this.clearDurationError();
+
+    // Validate input
+    if (!inputValue) {
+      this.showDurationError('Duration is required');
+      this.setDuration(25); // Reset to default
+      return;
+    }
+
+    const minutes = parseInt(inputValue, 10);
+
+    // Check if it's a valid number
+    if (isNaN(minutes)) {
+      this.showDurationError('Please enter a valid number');
+      this.setDuration(25); // Reset to default
+      return;
+    }
+
+    // Check range (1-120 minutes)
+    if (minutes < 1 || minutes > 120) {
+      this.showDurationError('Duration must be between 1 and 120 minutes');
+      this.setDuration(25); // Reset to default
+      return;
+    }
+
+    // Valid duration - apply it
+    this.setDuration(minutes);
+    this.saveCustomDuration(minutes);
+
+    // Reset timer if not running
+    if (!this.isRunning) {
+      this.reset();
+    }
+  }
+
+  /**
+   * Show duration validation error
+   * @param {string} message - Error message to display
+   */
+  showDurationError(message) {
+    if (this.durationError) {
+      this.durationError.textContent = message;
+      this.durationError.style.display = 'block';
+      this.durationError.style.color = '#e74c3c';
+    }
+  }
+
+  /**
+   * Clear duration validation error
+   */
+  clearDurationError() {
+    if (this.durationError) {
+      this.durationError.textContent = '';
+      this.durationError.style.display = 'none';
+    }
   }
 
   /**
@@ -297,8 +664,16 @@ class FocusTimer {
       return; // Already running
     }
 
+    // Validate duration before starting
+    this.validateAndSaveDuration();
+
+    // Check if validation passed
+    if (this.durationError && this.durationError.textContent) {
+      return; // Don't start if there's an error
+    }
+
     this.isRunning = true;
-    
+
     // Clear any existing interval
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -346,7 +721,7 @@ class FocusTimer {
   }
 
   /**
-   * Reset the timer to initial duration
+   * Reset the timer to current duration
    */
   reset() {
     // Stop the timer if running
@@ -354,7 +729,7 @@ class FocusTimer {
       this.stop();
     }
 
-    // Reset to initial duration
+    // Reset to current duration
     this.remainingTime = this.duration;
     this.updateDisplay();
 
@@ -375,10 +750,10 @@ class FocusTimer {
     // Convert seconds to MM:SS format
     const minutes = Math.floor(this.remainingTime / 60);
     const seconds = this.remainingTime % 60;
-    
+
     // Format with leading zeros
     const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    
+
     this.displayElement.textContent = formattedTime;
   }
 
@@ -415,6 +790,7 @@ class FocusTimer {
     this.isRunning = false;
   }
 }
+
 
 // ============================================================================
 // Task Model
@@ -580,26 +956,43 @@ class TaskManager {
    * @returns {string|null} - Task ID if successful, null if validation fails
    */
   addTask(text) {
-    // Create new task
-    const task = new Task(text);
-    
+    // Trim whitespace from input text (Requirement 4.4)
+    const trimmedText = text.trim();
+
+    // Create new task with trimmed text
+    const task = new Task(trimmedText);
+
     // Validate task
     if (!task.validate()) {
       console.warn('Cannot add task with empty text');
+      this.showErrorMessage('Task text cannot be empty');
       return null;
     }
-    
-    // Add to tasks array
+
+    // Check for duplicate tasks (Requirements 4.1, 4.3)
+    const isDuplicate = this.tasks.some(existingTask => 
+      existingTask.text.toLowerCase() === trimmedText.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      // Display error message and prevent creation (Requirement 4.2)
+      console.warn('Cannot add duplicate task');
+      this.showErrorMessage('A task with this text already exists');
+      return null;
+    }
+
+    // Add to tasks array (Requirement 4.5)
     this.tasks.push(task);
-    
+
     // Save to Local Storage
     this.saveTasks();
-    
+
     // Re-render tasks
     this.renderTasks();
-    
+
     return task.id;
   }
+
 
   /**
    * Edit an existing task
@@ -949,6 +1342,47 @@ class TaskManager {
    */
   getTask(id) {
     return this.tasks.find(t => t.id === id) || null;
+  }
+
+  /**
+   * Display error message to user
+   * @param {string} message - Error message to display
+   */
+  showErrorMessage(message) {
+    // Create error message element
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'task-error-message';
+    errorDiv.textContent = message;
+    errorDiv.setAttribute('role', 'alert');
+    errorDiv.setAttribute('aria-live', 'polite');
+
+    // Style the error message
+    errorDiv.style.cssText = `
+      background-color: #fee;
+      border: 1px solid #fcc;
+      color: #c33;
+      padding: 8px 12px;
+      margin: 8px 0;
+      border-radius: 4px;
+      font-size: 14px;
+    `;
+
+    // Find the task input container
+    const taskInput = document.getElementById('task-input');
+    if (taskInput && taskInput.parentNode) {
+      // Insert error message after the input
+      taskInput.parentNode.insertBefore(errorDiv, taskInput.nextSibling);
+
+      // Auto-remove error message after 3 seconds
+      setTimeout(() => {
+        if (errorDiv.parentNode) {
+          errorDiv.parentNode.removeChild(errorDiv);
+        }
+      }, 3000);
+    } else {
+      // Fallback to alert if DOM structure is unexpected
+      alert(message);
+    }
   }
 }
 

@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productivity Dashboard</title>
+    <title>Your roductivity Dashboard!</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>Productivity Dashboard</h1>
+            <h1>Your Productivity Dashboard!</h1>
         </header>
         
         <main class="dashboard-main" role="main">
@@ -19,12 +19,32 @@
                     <div class="time-display" id="time-display" role="timer" aria-live="polite" aria-atomic="true">--:-- --</div>
                     <div class="date-display" id="date-display" aria-live="polite">Loading...</div>
                     <div class="greeting-message" id="greeting-message" aria-live="polite">Welcome</div>
+                    <div class="name-customization" id="name-customization">
+                        <div class="name-display" id="name-display" style="display: none;">
+                            <span class="custom-name" id="custom-name"></span>
+                            <button id="edit-name-btn" class="btn btn-edit-name" aria-label="Edit custom name">✏️</button>
+                        </div>
+                        <div class="name-input-container" id="name-input-container" style="display: none;">
+                            <input type="text" id="custom-name-input" placeholder="Enter your name..." maxlength="50" aria-label="Custom name input">
+                            <div class="name-input-actions">
+                                <button id="save-name-btn" class="btn btn-save-name" aria-label="Save custom name">Save</button>
+                                <button id="cancel-name-btn" class="btn btn-cancel-name" aria-label="Cancel name edit">Cancel</button>
+                            </div>
+                        </div>
+                        <button id="add-name-btn" class="btn btn-add-name" aria-label="Add custom name">Personalize</button>
+                    </div>
                 </div>
             </section>
 
             <!-- Focus Timer Widget -->
             <section class="widget timer-widget" id="timer-widget" aria-label="Focus timer">
                 <h2>Focus Timer</h2>
+                <div class="timer-customization" role="group" aria-label="Timer duration settings">
+                    <label for="timer-duration-input" class="timer-duration-label">Duration (minutes):</label>
+                    <input type="number" id="timer-duration-input" class="timer-duration-input" 
+                           min="1" max="120" value="25" aria-label="Timer duration in minutes">
+                    <div class="timer-duration-error" id="timer-duration-error" role="alert" aria-live="polite"></div>
+                </div>
                 <div class="timer-display" id="timer-display" role="timer" aria-live="polite" aria-atomic="true">25:00</div>
                 <div class="timer-controls" role="group" aria-label="Timer controls">
                     <button id="timer-start" class="btn btn-primary" aria-label="Start timer">Start</button>
