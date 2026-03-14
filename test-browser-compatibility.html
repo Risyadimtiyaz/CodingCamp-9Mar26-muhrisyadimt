@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Compatibility Tests - Productivity Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        .browser-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .summary {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .feature-table th,
+        .feature-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .feature-table th {
+            background: #3498db;
+            color: white;
+        }
+        .feature-table tr:hover {
+            background: #f5f5f5;
+        }
+        .supported {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .not-supported {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Browser Compatibility Tests</h1>
+    
+    <div class="browser-info" id="browser-info">
+        <h3>Browser Information</h3>
+        <p id="user-agent">Detecting...</p>
+        <p id="browser-details">Analyzing...</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Automated Compatibility Tests</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Feature Support Matrix</h2>
+        <table class="feature-table" id="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="feature-tbody">
+                <!-- Features will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary" id="summary" style="display: none;">
+        <h3>Test Summary</h3>
+        <p id="summary-text"></p>
+    </div>
+
+    <script>
+        // Browser detection and information
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            const browserInfo = document.getElementById('browser-info');
+            const userAgentEl = document.getElementById('user-agent');
+            const detailsEl = document.getElementById('browser-details');
+
+            userAgentEl.textContent = `User Agent: ${ua}`;
+
+            let browserName = 'Unknown';
+            let browserVersion = 'Unknown';
+            let isSupported = false;
+
+            // Detect browser and version
+            if (ua.indexOf('Chrome') > -1 && ua.indexOf('Edg') === -1) {
+                browserName = 'Chrome';
+                const match = ua.match(/Chrome\/(\d+)/);
+                if (match) {
+                    browserVersion = match[1];
+                    isSupported = parseInt(browserVersion) >= 90;
+                }
+            } else if (ua.indexOf('Edg') > -1) {
+                browserName = 'Edge';
+                const match = ua.match(/Edg\/(\d+)/);
+                if (match) {
+                    browserVersion = match[1];
+                    isSupported = parseInt(browserVersion) >= 90;
+                }
+            } else if (ua.indexOf('Firefox') > -1) {
+                browserName = 'Firefox';
+                const match = ua.match(/Firefox\/(\d+)/);
+                if (match) {
+                    browserVersion = match[1];
+                    isSupported = parseInt(browserVersion) >= 88;
+                }
+            } else if (ua.indexOf('Safari') > -1 && ua.indexOf('Chrome') === -1) {
+                browserName = 'Safari';
+                const match = ua.match(/Version\/(\d+)/);
+                if (match) {
+                    browserVersion = match[1];
+                    isSupported = parseInt(browserVersion) >= 14;
+                }
+            }
+
+            const supportText = isSupported 
+                ? '<span style="color: #28a745; font-weight: bold;">✓ SUPPORTED</span>' 
+                : '<span style="color: #dc3545; font-weight: bold;">✗ NOT SUPPORTED (may have issues)</span>';
+
+            detailsEl.innerHTML = `Browser: <strong>${browserName}</strong> | Version: <strong>${browserVersion}</strong> | ${supportText}`;
+
+            return { browserName, browserVersion, isSupported };
+        }
+
+        // Test results array
+        let testResults = [];
+
+        // Helper function to add test result
+        function addTestResult(testName, passed, details = '') {
+            testResults.push({ testName, passed, details });
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.textContent = `${passed ? '✓' : '✗'} ${testName}${details ? ': ' + details : ''}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // Helper function to add info message
+        function addInfo(message) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result info';
+            resultDiv.textContent = `ℹ ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // Test: Local Storage API
+        function testLocalStorage() {
+            try {
+                const testKey = 'browser-compat-test';
+                const testValue = { test: 'data', timestamp: Date.now() };
+                
+                // Test save
+                localStorage.setItem(testKey, JSON.stringify(testValue));
+                
+                // Test load
+                const loaded = JSON.parse(localStorage.getItem(testKey));
+                
+                // Test remove
+                localStorage.removeItem(testKey);
+                
+                const passed = loaded.test === 'data';
+                addTestResult('Local Storage API', passed, passed ? 'Save, load, and remove work correctly' : 'Failed to save/load data');
+                return passed;
+            } catch (error) {
+                addTestResult('Local Storage API', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: ES6 Classes
+        function testES6Classes() {
+            try {
+                class TestClass {
+                    constructor(value) {
+                        this.value = value;
+                    }
+                    getValue() {
+                        return this.value;
+                    }
+                }
+                const instance = new TestClass(42);
+                const passed = instance.getValue() === 42;
+                addTestResult('ES6 Classes', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('ES6 Classes', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: Arrow Functions
+        function testArrowFunctions() {
+            try {
+                const add = (a, b) => a + b;
+                const passed = add(2, 3) === 5;
+                addTestResult('Arrow Functions', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('Arrow Functions', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: Template Literals
+        function testTemplateLiterals() {
+            try {
+                const name = 'Test';
+                const result = `Hello ${name}`;
+                const passed = result === 'Hello Test';
+                addTestResult('Template Literals', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('Template Literals', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: Spread Operator
+        function testSpreadOperator() {
+            try {
+                const arr1 = [1, 2, 3];
+                const arr2 = [...arr1, 4, 5];
+                const passed = arr2.length === 5 && arr2[3] === 4;
+                addTestResult('Spread Operator', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('Spread Operator', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: Date API and Formatting
+        function testDateAPI() {
+            try {
+                const date = new Date();
+                const timeString = date.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                const dateString = date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                const passed = timeString.includes('M') && dateString.length > 0;
+                addTestResult('Date API & Formatting', passed, `Time: ${timeString}, Date: ${dateString}`);
+                return passed;
+            } catch (error) {
+                addTestResult('Date API & Formatting', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: URL Constructor
+        function testURLConstructor() {
+            try {
+                const url = new URL('https://example.com/path?query=value');
+                const passed = url.hostname === 'example.com' && url.pathname === '/path';
+                addTestResult('URL Constructor', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('URL Constructor', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: DocumentFragment
+        function testDocumentFragment() {
+            try {
+                const fragment = document.createDocumentFragment();
+                const div = document.createElement('div');
+                fragment.appendChild(div);
+                const passed = fragment.childNodes.length === 1;
+                addTestResult('DocumentFragment', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('DocumentFragment', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: setInterval/clearInterval
+        function testTimers() {
+            return new Promise((resolve) => {
+                try {
+                    let count = 0;
+                    const intervalId = setInterval(() => {
+                        count++;
+                        if (count >= 2) {
+                            clearInterval(intervalId);
+                            const passed = count === 2;
+                            addTestResult('setInterval/clearInterval', passed);
+                            resolve(passed);
+                        }
+                    }, 10);
+                } catch (error) {
+                    addTestResult('setInterval/clearInterval', false, error.message);
+                    resolve(false);
+                }
+            });
+        }
+
+        // Test: DOM APIs
+        function testDOMAPIs() {
+            try {
+                // Test createElement
+                const div = document.createElement('div');
+                div.id = 'test-element';
+                div.className = 'test-class';
+                div.textContent = 'Test';
+                
+                // Test classList
+                div.classList.add('another-class');
+                div.classList.remove('another-class');
+                
+                // Test dataset
+                div.dataset.testValue = 'test';
+                
+                // Test setAttribute
+                div.setAttribute('aria-label', 'Test Label');
+                
+                const passed = 
+                    div.id === 'test-element' &&
+                    div.className === 'test-class' &&
+                    div.textContent === 'Test' &&
+                    div.dataset.testValue === 'test' &&
+                    div.getAttribute('aria-label') === 'Test Label';
+                
+                addTestResult('DOM APIs', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('DOM APIs', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: CSS Grid Support
+        function testCSSGrid() {
+            try {
+                const div = document.createElement('div');
+                div.style.display = 'grid';
+                const passed = div.style.display === 'grid';
+                addTestResult('CSS Grid', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('CSS Grid', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: CSS Flexbox Support
+        function testCSSFlexbox() {
+            try {
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                const passed = div.style.display === 'flex';
+                addTestResult('CSS Flexbox', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('CSS Flexbox', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: Array Methods
+        function testArrayMethods() {
+            try {
+                const arr = [1, 2, 3, 4, 5];
+                const mapped = arr.map(x => x * 2);
+                const filtered = arr.filter(x => x > 2);
+                const found = arr.find(x => x === 3);
+                const passed = 
+                    mapped[0] === 2 &&
+                    filtered.length === 3 &&
+                    found === 3;
+                addTestResult('Array Methods (map, filter, find)', passed);
+                return passed;
+            } catch (error) {
+                addTestResult('Array Methods', false, error.message);
+                return false;
+            }
+        }
+
+        // Test: window.open
+        function testWindowOpen() {
+            try {
+                // We can't actually open a window in automated tests, but we can check if the function exists
+                const passed = typeof window.open === 'function';
+                addTestResult('window.open()', passed, 'Function exists (actual opening not tested)');
+                return passed;
+            } catch (error) {
+                addTestResult('window.open()', false, error.message);
+                return false;
+            }
+        }
+
+        // Populate feature support table
+        function populateFeatureTable() {
+            const features = [
+                { name: 'Local Storage API', check: () => typeof localStorage !== 'undefined' },
+                { name: 'ES6 Classes', check: () => { try { eval('class Test {}'); return true; } catch { return false; } } },
+                { name: 'Arrow Functions', check: () => { try { eval('() => {}'); return true; } catch { return false; } } },
+                { name: 'Template Literals', check: () => { try { eval('`test`'); return true; } catch { return false; } } },
+                { name: 'Spread Operator', check: () => { try { eval('[...[], 1]'); return true; } catch { return false; } } },
+                { name: 'const/let', check: () => { try { eval('const x = 1; let y = 2;'); return true; } catch { return false; } } },
+                { name: 'JSON API', check: () => typeof JSON !== 'undefined' && typeof JSON.parse === 'function' },
+                { name: 'Date API', check: () => typeof Date !== 'undefined' },
+                { name: 'URL Constructor', check: () => typeof URL !== 'undefined' },
+                { name: 'DocumentFragment', check: () => typeof DocumentFragment !== 'undefined' },
+                { name: 'setInterval/clearInterval', check: () => typeof setInterval === 'function' },
+                { name: 'addEventListener', check: () => typeof document.addEventListener === 'function' },
+                { name: 'querySelector', check: () => typeof document.querySelector === 'function' },
+                { name: 'classList', check: () => 'classList' in document.createElement('div') },
+                { name: 'dataset', check: () => 'dataset' in document.createElement('div') },
+                { name: 'CSS Grid', check: () => CSS.supports('display', 'grid') },
+                { name: 'CSS Flexbox', check: () => CSS.supports('display', 'flex') },
+                { name: 'CSS Transforms', check: () => CSS.supports('transform', 'translateX(10px)') },
+                { name: 'CSS Transitions', check: () => CSS.supports('transition', 'all 0.3s') },
+                { name: 'CSS Gradients', check: () => CSS.supports('background', 'linear-gradient(red, blue)') },
+            ];
+
+            const tbody = document.getElementById('feature-tbody');
+            tbody.innerHTML = '';
+
+            features.forEach(feature => {
+                const tr = document.createElement('tr');
+                const supported = feature.check();
+                
+                tr.innerHTML = `
+                    <td>${feature.name}</td>
+                    <td class="${supported ? 'supported' : 'not-supported'}">${supported ? '✓ Supported' : '✗ Not Supported'}</td>
+                    <td>${supported ? 'Available' : 'Not available in this browser'}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            clearResults();
+            addInfo('Running browser compatibility tests...');
+            
+            const browserInfo = detectBrowser();
+            addInfo(`Testing on ${browserInfo.browserName} ${browserInfo.browserVersion}`);
+            
+            // Run synchronous tests
+            testLocalStorage();
+            testES6Classes();
+            testArrowFunctions();
+            testTemplateLiterals();
+            testSpreadOperator();
+            testDateAPI();
+            testURLConstructor();
+            testDocumentFragment();
+            testDOMAPIs();
+            testCSSGrid();
+            testCSSFlexbox();
+            testArrayMethods();
+            testWindowOpen();
+            
+            // Run asynchronous tests
+            await testTimers();
+            
+            // Show summary
+            showSummary();
+            
+            // Populate feature table
+            populateFeatureTable();
+        }
+
+        // Clear results
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+            testResults = [];
+        }
+
+        // Show summary
+        function showSummary() {
+            const totalTests = testResults.length;
+            const passedTests = testResults.filter(r => r.passed).length;
+            const failedTests = totalTests - passedTests;
+            
+            const summaryDiv = document.getElementById('summary');
+            const summaryText = document.getElementById('summary-text');
+            
+            summaryDiv.style.display = 'block';
+            summaryText.innerHTML = `
+                <strong>Total Tests:</strong> ${totalTests}<br>
+                <strong>Passed:</strong> <span style="color: #28a745;">${passedTests}</span><br>
+                <strong>Failed:</strong> <span style="color: #dc3545;">${failedTests}</span><br>
+                <strong>Success Rate:</strong> ${((passedTests / totalTests) * 100).toFixed(1)}%<br>
+                <br>
+                ${failedTests === 0 
+                    ? '<strong style="color: #28a745;">✓ All tests passed! This browser is fully compatible.</strong>' 
+                    : '<strong style="color: #dc3545;">✗ Some tests failed. This browser may have compatibility issues.</strong>'}
+            `;
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            detectBrowser();
+            populateFeatureTable();
+        });
+    </script>
+</body>
+</html>

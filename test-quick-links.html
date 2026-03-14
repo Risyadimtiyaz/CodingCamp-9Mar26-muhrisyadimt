@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Links Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-result {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 3px;
+    }
+    .pass {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .fail {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    h2 {
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>Quick Links Manager Test Suite</h1>
+  <div id="test-results"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Test suite for Link and QuickLinksManager
+    const results = [];
+
+    function test(name, fn) {
+      try {
+        fn();
+        results.push({ name, passed: true });
+      } catch (error) {
+        results.push({ name, passed: false, error: error.message });
+      }
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message || 'Assertion failed');
+      }
+    }
+
+    // Clear localStorage before tests
+    localStorage.clear();
+
+    // Test 1: Link creation with valid data
+    test('Link creation with valid URL and display name', () => {
+      const link = new Link('https://example.com', 'Example Site');
+      assert(link.url === 'https://example.com', 'URL should be set correctly');
+      assert(link.displayName === 'Example Site', 'Display name should be set correctly');
+      assert(link.id, 'Link should have an ID');
+      assert(link.createdAt, 'Link should have a createdAt timestamp');
+    });
+
+    // Test 2: Link validation with valid data
+    test('Link validation with valid URL and display name', () => {
+      const link = new Link('https://google.com', 'Google');
+      assert(link.validate() === true, 'Valid link should pass validation');
+    });
+
+    // Test 3: Link validation with empty URL
+    test('Link validation rejects empty URL', () => {
+      const link = new Link('', 'Test');
+      assert(link.validate() === false, 'Link with empty URL should fail validation');
+    });
+
+    // Test 4: Link validation with empty display name
+    test('Link validation rejects empty display name', () => {
+      const link = new Link('https://example.com', '');
+      assert(link.validate() === false, 'Link with empty display name should fail validation');
+    });
+
+    // Test 5: Link validation with invalid URL
+    test('Link validation rejects invalid URL', () => {
+      const link = new Link('not-a-url', 'Test');
+      assert(link.validate() === false, 'Link with invalid URL should fail validation');
+    });
+
+    // Test 6: Link URL validation method
+    test('Link isValidUrl method works correctly', () => {
+      const link = new Link('https://example.com', 'Test');
+      assert(link.isValidUrl('https://google.com') === true, 'Valid URL should return true');
+      assert(link.isValidUrl('invalid') === false, 'Invalid URL should return false');
+    });
+
+    // Test 7: QuickLinksManager initialization
+    test('QuickLinksManager initializes with empty links array', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      assert(Array.isArray(manager.links), 'Links should be an array');
+      assert(manager.links.length === 0, 'Links array should be empty initially');
+    });
+
+    // Test 8: QuickLinksManager addLink with valid data
+    test('QuickLinksManager adds valid link', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const linkId = manager.addLink('https://github.com', 'GitHub');
+      assert(linkId !== null, 'addLink should return link ID');
+      assert(manager.links.length === 1, 'Links array should have one link');
+      assert(manager.links[0].url === 'https://github.com', 'Link URL should be correct');
+      assert(manager.links[0].displayName === 'GitHub', 'Link display name should be correct');
+    });
+
+    // Test 9: QuickLinksManager rejects invalid link (empty URL)
+    test('QuickLinksManager rejects link with empty URL', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const linkId = manager.addLink('', 'Test');
+      assert(linkId === null, 'addLink should return null for invalid link');
+      assert(manager.links.length === 0, 'Links array should remain empty');
+    });
+
+    // Test 10: QuickLinksManager rejects invalid link (empty display name)
+    test('QuickLinksManager rejects link with empty display name', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const linkId = manager.addLink('https://example.com', '');
+      assert(linkId === null, 'addLink should return null for invalid link');
+      assert(manager.links.length === 0, 'Links array should remain empty');
+    });
+
+    // Test 11: QuickLinksManager rejects invalid URL format
+    test('QuickLinksManager rejects link with invalid URL format', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const linkId = manager.addLink('not-a-valid-url', 'Test');
+      assert(linkId === null, 'addLink should return null for invalid URL');
+      assert(manager.links.length === 0, 'Links array should remain empty');
+    });
+
+    // Test 12: QuickLinksManager generates unique IDs
+    test('QuickLinksManager generates unique IDs for links', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const id1 = manager.addLink('https://example1.com', 'Example 1');
+      const id2 = manager.addLink('https://example2.com', 'Example 2');
+      assert(id1 !== id2, 'Link IDs should be unique');
+    });
+
+    // Test 13: QuickLinksManager deleteLink
+    test('QuickLinksManager deletes link correctly', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const linkId = manager.addLink('https://example.com', 'Example');
+      assert(manager.links.length === 1, 'Should have one link');
+      const deleted = manager.deleteLink(linkId);
+      assert(deleted === true, 'deleteLink should return true');
+      assert(manager.links.length === 0, 'Links array should be empty after deletion');
+    });
+
+    // Test 14: QuickLinksManager deleteLink with invalid ID
+    test('QuickLinksManager deleteLink returns false for invalid ID', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const deleted = manager.deleteLink('invalid-id');
+      assert(deleted === false, 'deleteLink should return false for invalid ID');
+    });
+
+    // Test 15: QuickLinksManager saveLinks and loadLinks
+    test('QuickLinksManager persists links to Local Storage', () => {
+      localStorage.clear();
+      const container = document.createElement('div');
+      const manager1 = new QuickLinksManager(container);
+      manager1.addLink('https://example.com', 'Example');
+      
+      // Create new manager and load
+      const manager2 = new QuickLinksManager(container);
+      manager2.loadLinks();
+      
+      assert(manager2.links.length === 1, 'Loaded links should have one link');
+      assert(manager2.links[0].url === 'https://example.com', 'Loaded link URL should match');
+      assert(manager2.links[0].displayName === 'Example', 'Loaded link display name should match');
+    });
+
+    // Test 16: QuickLinksManager validateUrl method
+    test('QuickLinksManager validateUrl method works correctly', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      assert(manager.validateUrl('https://google.com') === true, 'Valid URL should return true');
+      assert(manager.validateUrl('invalid') === false, 'Invalid URL should return false');
+    });
+
+    // Test 17: Link ID generation format
+    test('Link generates ID with correct format', () => {
+      const link = new Link('https://example.com', 'Example');
+      assert(link.id.startsWith('link-'), 'Link ID should start with "link-"');
+    });
+
+    // Test 18: QuickLinksManager getLink method
+    test('QuickLinksManager getLink retrieves link by ID', () => {
+      const container = document.createElement('div');
+      const manager = new QuickLinksManager(container);
+      const linkId = manager.addLink('https://example.com', 'Example');
+      const link = manager.getLink(linkId);
+      assert(link !== null, 'getLink should return link object');
+      assert(link.id === linkId, 'Retrieved link should have correct ID');
+    });
+
+    // Display results
+    const resultsDiv = document.getElementById('test-results');
+    const passCount = results.filter(r => r.passed).length;
+    const failCount = results.filter(r => !r.passed).length;
+
+    resultsDiv.innerHTML = `
+      <div class="test-section">
+        <h2>Test Summary</h2>
+        <p><strong>Total:</strong> ${results.length} tests</p>
+        <p><strong>Passed:</strong> ${passCount}</p>
+        <p><strong>Failed:</strong> ${failCount}</p>
+      </div>
+      <div class="test-section">
+        <h2>Test Results</h2>
+        ${results.map(r => `
+          <div class="test-result ${r.passed ? 'pass' : 'fail'}">
+            ${r.passed ? '✓' : '✗'} ${r.name}
+            ${r.error ? `<br><small>Error: ${r.error}</small>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    console.log('Test Results:', results);
+  </script>
+</body>
+</html>

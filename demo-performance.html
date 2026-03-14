@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Demo - Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .demo-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        .demo-controls h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+        .demo-controls button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .demo-controls button:hover {
+            background: #2980b9;
+        }
+        .demo-results {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .result-pass {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .result-fail {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-controls">
+        <h3>Performance Demo</h3>
+        <button onclick="demo100Tasks()">Add 100 Tasks</button>
+        <button onclick="demo20Links()">Add 20 Links</button>
+        <button onclick="testPerformance()">Test Performance</button>
+        <button onclick="clearAll()">Clear All</button>
+        <div class="demo-results" id="demo-results"></div>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Productivity Dashboard - Performance Demo</h1>
+        </header>
+        
+        <main class="dashboard-main" role="main">
+            <!-- Greeting Widget -->
+            <section class="widget greeting-widget" id="greeting-widget" aria-label="Time and greeting display">
+                <div class="greeting-content">
+                    <div class="time-display" id="time-display" role="timer" aria-live="polite" aria-atomic="true">--:-- --</div>
+                    <div class="date-display" id="date-display" aria-live="polite">Loading...</div>
+                    <div class="greeting-message" id="greeting-message" aria-live="polite">Welcome</div>
+                </div>
+            </section>
+
+            <!-- Focus Timer Widget -->
+            <section class="widget timer-widget" id="timer-widget" aria-label="Focus timer">
+                <h2>Focus Timer</h2>
+                <div class="timer-display" id="timer-display" role="timer" aria-live="polite" aria-atomic="true">25:00</div>
+                <div class="timer-controls" role="group" aria-label="Timer controls">
+                    <button id="timer-start" class="btn btn-primary" aria-label="Start timer">Start</button>
+                    <button id="timer-stop" class="btn btn-secondary" aria-label="Stop timer">Stop</button>
+                    <button id="timer-reset" class="btn btn-secondary" aria-label="Reset timer">Reset</button>
+                </div>
+                <div class="timer-status" id="timer-status" role="status" aria-live="polite"></div>
+            </section>
+
+            <!-- Task Manager Widget -->
+            <section class="widget task-widget" id="task-widget" aria-label="Task manager">
+                <h2>Tasks</h2>
+                <div class="task-input-container" role="group" aria-label="Add new task">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="200" aria-label="New task text">
+                    <button id="add-task-btn" class="btn btn-primary" aria-label="Add task">Add</button>
+                </div>
+                <div class="task-list" id="task-list" role="list" aria-label="Task list">
+                    <!-- Tasks will be dynamically inserted here -->
+                </div>
+            </section>
+
+            <!-- Quick Links Widget -->
+            <section class="widget links-widget" id="links-widget" aria-label="Quick links">
+                <h2>Quick Links</h2>
+                <div class="link-input-container" role="group" aria-label="Add new link">
+                    <input type="url" id="link-url-input" placeholder="Enter URL..." maxlength="500" aria-label="Link URL">
+                    <input type="text" id="link-name-input" placeholder="Display name..." maxlength="50" aria-label="Link display name">
+                    <button id="add-link-btn" class="btn btn-primary" aria-label="Add link">Add</button>
+                </div>
+                <div class="links-list" id="links-list" role="list" aria-label="Quick links list">
+                    <!-- Links will be dynamically inserted here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let taskManagerInstance = null;
+        let linksManagerInstance = null;
+        
+        // Get instances after page load
+        setTimeout(() => {
+            taskManagerInstance = new TaskManager(document.getElementById('task-widget'));
+            taskManagerInstance.init();
+            
+            linksManagerInstance = new QuickLinksManager(document.getElementById('links-widget'));
+            linksManagerInstance.init();
+        }, 100);
+        
+        function logResult(message, isPass = null) {
+            const results = document.getElementById('demo-results');
+            const div = document.createElement('div');
+            if (isPass === true) {
+                div.className = 'result-pass';
+                message = '✓ ' + message;
+            } else if (isPass === false) {
+                div.className = 'result-fail';
+                message = '✗ ' + message;
+            }
+            div.textContent = message;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function demo100Tasks() {
+            logResult('Adding 100 tasks...');
+            const start = performance.now();
+            
+            for (let i = 1; i <= 100; i++) {
+                taskManagerInstance.addTask(`Task ${i}: Performance test task with description`);
+            }
+            
+            const end = performance.now();
+            const time = (end - start).toFixed(2);
+            logResult(`Added 100 tasks in ${time}ms`);
+            logResult(`Average: ${(time / 100).toFixed(2)}ms per task`);
+        }
+        
+        function demo20Links() {
+            logResult('Adding 20 links...');
+            const start = performance.now();
+            
+            for (let i = 1; i <= 20; i++) {
+                linksManagerInstance.addLink(`https://example${i}.com`, `Example Link ${i}`);
+            }
+            
+            const end = performance.now();
+            const time = (end - start).toFixed(2);
+            logResult(`Added 20 links in ${time}ms`);
+            logResult(`Average: ${(time / 20).toFixed(2)}ms per link`);
+        }
+        
+        function testPerformance() {
+            logResult('=== Performance Test ===');
+            
+            // Test 1: Render 100 tasks
+            if (taskManagerInstance.tasks.length < 100) {
+                logResult('Adding 100 tasks first...');
+                for (let i = 1; i <= 100; i++) {
+                    taskManagerInstance.addTask(`Task ${i}`);
+                }
+            }
+            
+            const renderStart = performance.now();
+            taskManagerInstance.renderTasks();
+            const renderEnd = performance.now();
+            const renderTime = (renderEnd - renderStart).toFixed(2);
+            
+            logResult(`Render 100 tasks: ${renderTime}ms`, renderTime < 100);
+            
+            // Test 2: Toggle task
+            const taskId = taskManagerInstance.tasks[50].id;
+            const toggleStart = performance.now();
+            taskManagerInstance.toggleTaskComplete(taskId);
+            const toggleEnd = performance.now();
+            const toggleTime = (toggleEnd - toggleStart).toFixed(2);
+            
+            logResult(`Toggle task: ${toggleTime}ms`, toggleTime < 100);
+            
+            // Test 3: Render 20 links
+            if (linksManagerInstance.links.length < 20) {
+                logResult('Adding 20 links first...');
+                for (let i = 1; i <= 20; i++) {
+                    linksManagerInstance.addLink(`https://example${i}.com`, `Link ${i}`);
+                }
+            }
+            
+            const renderLinksStart = performance.now();
+            linksManagerInstance.renderLinks();
+            const renderLinksEnd = performance.now();
+            const renderLinksTime = (renderLinksEnd - renderLinksStart).toFixed(2);
+            
+            logResult(`Render 20 links: ${renderLinksTime}ms`, renderLinksTime < 100);
+            
+            logResult('=== Test Complete ===');
+        }
+        
+        function clearAll() {
+            localStorage.clear();
+            location.reload();
+        }
+    </script>
+</body>
+</html>

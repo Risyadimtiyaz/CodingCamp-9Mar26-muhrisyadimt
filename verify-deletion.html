@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Deletion - Quick Verification</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .verification-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .verification-panel h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .test-step {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .test-step.pass {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .test-step.fail {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-panel">
+        <h3>Task Deletion Verification</h3>
+        <p>Testing Requirements 7.1, 7.2, 7.3</p>
+        <button class="test-button" onclick="runQuickTest()">Run Quick Test</button>
+        <button class="test-button" onclick="clearResults()">Clear</button>
+        <div id="test-output"></div>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Productivity Dashboard - Deletion Test</h1>
+        </header>
+        
+        <main class="dashboard-main">
+            <!-- Task Manager Widget -->
+            <section class="widget task-widget" id="task-widget">
+                <h2>Tasks</h2>
+                <div class="task-input-container">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="200">
+                    <button id="add-task-btn" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-list" id="task-list">
+                    <!-- Tasks will be dynamically inserted here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let testOutput = document.getElementById('test-output');
+        let taskManagerInstance = null;
+
+        // Initialize task manager when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskContainer = document.getElementById('task-widget');
+            if (taskContainer) {
+                taskManagerInstance = new TaskManager(taskContainer);
+                taskManagerInstance.init();
+            }
+        });
+
+        function clearResults() {
+            testOutput.innerHTML = '';
+        }
+
+        function addResult(message, passed) {
+            const div = document.createElement('div');
+            div.className = `test-step ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `${passed ? '✓' : '✗'} ${message}`;
+            testOutput.appendChild(div);
+        }
+
+        function runQuickTest() {
+            clearResults();
+            
+            if (!taskManagerInstance) {
+                addResult('Task manager not initialized', false);
+                return;
+            }
+
+            // Clear existing tasks
+            localStorage.clear();
+            taskManagerInstance.tasks = [];
+            taskManagerInstance.renderTasks();
+
+            addResult('Starting deletion tests...', true);
+
+            // Test 1: Add tasks
+            const id1 = taskManagerInstance.addTask('Task One');
+            const id2 = taskManagerInstance.addTask('Task Two');
+            const id3 = taskManagerInstance.addTask('Task Three');
+            
+            const initialCount = taskManagerInstance.tasks.length;
+            addResult(`Added 3 tasks (count: ${initialCount})`, initialCount === 3);
+
+            // Test 2: Delete middle task
+            const deleteSuccess = taskManagerInstance.deleteTask(id2);
+            const afterCount = taskManagerInstance.tasks.length;
+            addResult(`Deleted task (success: ${deleteSuccess}, count: ${afterCount})`, deleteSuccess && afterCount === 2);
+
+            // Test 3: Verify task removed from array (Req 7.1)
+            const taskExists = taskManagerInstance.tasks.some(t => t.id === id2);
+            addResult(`Task removed from array (Req 7.1)`, !taskExists);
+
+            // Test 4: Verify task removed from storage (Req 7.2)
+            const savedTasks = LocalStorageService.load(STORAGE_KEYS.TASKS);
+            const inStorage = savedTasks ? savedTasks.some(t => t.id === id2) : false;
+            addResult(`Task removed from storage (Req 7.2)`, !inStorage);
+
+            // Test 5: Verify all data removed (Req 7.3)
+            const taskData = savedTasks ? savedTasks.find(t => t.id === id2) : null;
+            addResult(`All task data removed (Req 7.3)`, !taskData);
+
+            // Test 6: Verify remaining tasks intact
+            const task1Exists = taskManagerInstance.tasks.some(t => t.id === id1);
+            const task3Exists = taskManagerInstance.tasks.some(t => t.id === id3);
+            addResult(`Remaining tasks intact`, task1Exists && task3Exists);
+
+            // Test 7: Verify UI updated
+            const taskElements = document.querySelectorAll('.task-item');
+            const uiCount = taskElements.length;
+            addResult(`UI updated (${uiCount} tasks displayed)`, uiCount === 2);
+
+            // Test 8: Delete completed task
+            taskManagerInstance.toggleTaskComplete(id1);
+            const deleteCompleted = taskManagerInstance.deleteTask(id1);
+            addResult(`Completed task deleted`, deleteCompleted);
+
+            // Test 9: Delete non-existent task
+            const deleteNonExistent = taskManagerInstance.deleteTask('fake-id');
+            addResult(`Non-existent task returns false`, !deleteNonExistent);
+
+            // Final summary
+            const finalCount = taskManagerInstance.tasks.length;
+            addResult(`Final state: ${finalCount} task(s) remaining`, finalCount === 1);
+
+            addResult('All tests completed!', true);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Editing Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Editing Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>Manual Test Instructions</h2>
+        <ol>
+            <li>Add a task using the input below</li>
+            <li>Click the "Edit" button on the task</li>
+            <li>Verify that an inline text field appears with the current task text</li>
+            <li>Try editing the text and clicking "Save"</li>
+            <li>Verify the task text updates</li>
+            <li>Add another task and click "Edit"</li>
+            <li>Try clicking "Cancel" and verify the original text is preserved</li>
+            <li>Double-click on a task text to enter edit mode</li>
+            <li>Try pressing Enter to save and Escape to cancel</li>
+            <li>Try saving with empty text and verify it's rejected</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Task Manager</h2>
+        <div class="task-input-container">
+            <input type="text" id="task-input" placeholder="Add a new task..." maxlength="200">
+            <button id="add-task-btn" class="btn btn-primary">Add</button>
+        </div>
+        <ul class="task-list" id="task-list"></ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Automated Tests</h2>
+        <button id="run-tests" class="btn btn-primary">Run Tests</button>
+        <div id="test-results"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Initialize task manager
+        const taskManager = new TaskManager(document.getElementById('task-list'));
+        
+        // Set up DOM elements
+        taskManager.taskInput = document.getElementById('task-input');
+        taskManager.addButton = document.getElementById('add-task-btn');
+        taskManager.taskList = document.getElementById('task-list');
+        
+        // Set up event listeners
+        taskManager.addButton.addEventListener('click', () => {
+            if (taskManager.taskInput.value) {
+                taskManager.addTask(taskManager.taskInput.value);
+                taskManager.taskInput.value = '';
+            }
+        });
+        
+        taskManager.taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && taskManager.taskInput.value) {
+                taskManager.addTask(taskManager.taskInput.value);
+                taskManager.taskInput.value = '';
+            }
+        });
+        
+        // Load existing tasks
+        taskManager.loadTasks();
+        
+        // Automated tests
+        document.getElementById('run-tests').addEventListener('click', () => {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<h3>Running tests...</h3>';
+            
+            const results = [];
+            
+            // Test 1: Edit mode activation
+            try {
+                const taskId = taskManager.addTask('Test task for editing');
+                const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+                const task = taskManager.getTask(taskId);
+                
+                taskManager.enterEditMode(taskElement, task);
+                
+                const hasEditingClass = taskElement.classList.contains('editing');
+                const hasEditInput = taskElement.querySelector('.task-edit-input') !== null;
+                const hasEditActions = taskElement.querySelector('.task-edit-actions') !== null;
+                
+                if (hasEditingClass && hasEditInput && hasEditActions) {
+                    results.push({ name: 'Edit mode activation', pass: true });
+                } else {
+                    results.push({ name: 'Edit mode activation', pass: false, error: 'Edit mode UI not properly created' });
+                }
+                
+                // Clean up
+                taskManager.cancelEdit(taskElement);
+            } catch (error) {
+                results.push({ name: 'Edit mode activation', pass: false, error: error.message });
+            }
+            
+            // Test 2: Edit cancellation preserves original text
+            try {
+                const taskId = taskManager.addTask('Original text');
+                const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+                const task = taskManager.getTask(taskId);
+                const originalText = task.text;
+                
+                taskManager.enterEditMode(taskElement, task);
+                
+                const editInput = taskElement.querySelector('.task-edit-input');
+                editInput.value = 'Modified text';
+                
+                taskManager.cancelEdit(taskElement);
+                
+                const currentTask = taskManager.getTask(taskId);
+                if (currentTask.text === originalText) {
+                    results.push({ name: 'Cancel preserves original text', pass: true });
+                } else {
+                    results.push({ name: 'Cancel preserves original text', pass: false, error: `Expected "${originalText}", got "${currentTask.text}"` });
+                }
+            } catch (error) {
+                results.push({ name: 'Cancel preserves original text', pass: false, error: error.message });
+            }
+            
+            // Test 3: Edit validation rejects empty text
+            try {
+                const taskId = taskManager.addTask('Valid task');
+                const task = taskManager.getTask(taskId);
+                const originalText = task.text;
+                
+                // Try to edit with empty text
+                const success = taskManager.editTask(taskId, '');
+                
+                const currentTask = taskManager.getTask(taskId);
+                if (!success && currentTask.text === originalText) {
+                    results.push({ name: 'Empty text validation', pass: true });
+                } else {
+                    results.push({ name: 'Empty text validation', pass: false, error: 'Empty text was not rejected' });
+                }
+            } catch (error) {
+                results.push({ name: 'Empty text validation', pass: false, error: error.message });
+            }
+            
+            // Test 4: Successful edit updates task
+            try {
+                const taskId = taskManager.addTask('Before edit');
+                const newText = 'After edit';
+                
+                const success = taskManager.editTask(taskId, newText);
+                const currentTask = taskManager.getTask(taskId);
+                
+                if (success && currentTask.text === newText) {
+                    results.push({ name: 'Successful edit updates task', pass: true });
+                } else {
+                    results.push({ name: 'Successful edit updates task', pass: false, error: `Expected "${newText}", got "${currentTask.text}"` });
+                }
+            } catch (error) {
+                results.push({ name: 'Successful edit updates task', pass: false, error: error.message });
+            }
+            
+            // Test 5: Edit persists to Local Storage
+            try {
+                const taskId = taskManager.addTask('Storage test');
+                const newText = 'Updated storage test';
+                
+                taskManager.editTask(taskId, newText);
+                
+                // Load from storage
+                const savedTasks = LocalStorageService.load(STORAGE_KEYS.TASKS);
+                const savedTask = savedTasks.find(t => t.id === taskId);
+                
+                if (savedTask && savedTask.text === newText) {
+                    results.push({ name: 'Edit persists to Local Storage', pass: true });
+                } else {
+                    results.push({ name: 'Edit persists to Local Storage', pass: false, error: 'Task not properly saved to storage' });
+                }
+            } catch (error) {
+                results.push({ name: 'Edit persists to Local Storage', pass: false, error: error.message });
+            }
+            
+            // Display results
+            let html = '<h3>Test Results</h3>';
+            results.forEach(result => {
+                const className = result.pass ? 'test-pass' : 'test-fail';
+                const status = result.pass ? '✓ PASS' : '✗ FAIL';
+                const error = result.error ? `<br><small>${result.error}</small>` : '';
+                html += `<div class="test-result ${className}">${status}: ${result.name}${error}</div>`;
+            });
+            
+            const passCount = results.filter(r => r.pass).length;
+            html += `<p><strong>${passCount}/${results.length} tests passed</strong></p>`;
+            
+            resultsDiv.innerHTML = html;
+        });
+    </script>
+</body>
+</html>

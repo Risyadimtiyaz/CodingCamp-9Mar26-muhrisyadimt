@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting Widget Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .test-info {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Greeting Widget Test</h1>
+    
+    <div class="test-info">
+        <h2>Visual Test</h2>
+        <p>The greeting widget should display:</p>
+        <ul>
+            <li>Current time in 12-hour format with AM/PM</li>
+            <li>Current date with day of week, month, and day</li>
+            <li>Time-based greeting (Morning/Afternoon/Evening/Night)</li>
+        </ul>
+    </div>
+
+    <!-- Greeting Widget -->
+    <section class="widget greeting-widget" id="greeting-widget">
+        <div class="greeting-content">
+            <div class="time-display" id="time-display">--:-- --</div>
+            <div class="date-display" id="date-display">Loading...</div>
+            <div class="greeting-message" id="greeting-message">Welcome</div>
+        </div>
+    </section>
+
+    <div class="test-info">
+        <h2>Automated Tests</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+
+        function addResult(testName, passed, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${passed ? '✓' : '✗'} ${testName}: ${message}`;
+            results.appendChild(div);
+        }
+
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Give the widget a moment to initialize
+            setTimeout(() => {
+                // Test that elements are populated
+                const timeDisplay = document.getElementById('time-display');
+                const dateDisplay = document.getElementById('date-display');
+                const greetingDisplay = document.getElementById('greeting-message');
+
+                // Test time display format
+                const timeText = timeDisplay.textContent;
+                const hasAMPM = timeText.includes('AM') || timeText.includes('PM');
+                const hasColon = timeText.includes(':');
+                addResult('Time display format', hasAMPM && hasColon, `Displays: "${timeText}"`);
+
+                // Test date display format
+                const dateText = dateDisplay.textContent;
+                const notLoading = dateText !== 'Loading...';
+                const hasComma = dateText.includes(',');
+                addResult('Date display format', notLoading && hasComma, `Displays: "${dateText}"`);
+
+                // Test greeting display
+                const greetingText = greetingDisplay.textContent;
+                const validGreetings = ['Good Morning', 'Good Afternoon', 'Good Evening', 'Good Night'];
+                const hasValidGreeting = validGreetings.includes(greetingText);
+                addResult('Greeting display', hasValidGreeting, `Displays: "${greetingText}"`);
+
+                // Test GreetingWidget class methods
+                const testWidget = new GreetingWidget(document.getElementById('greeting-widget'));
+                
+                // Test formatTime
+                const testDate = new Date(2024, 0, 15, 14, 30);
+                const formattedTime = testWidget.formatTime(testDate);
+                const timeHasAMPM = formattedTime.includes('AM') || formattedTime.includes('PM');
+                addResult('formatTime method', timeHasAMPM, `Returns: "${formattedTime}"`);
+
+                // Test formatDate
+                const formattedDate = testWidget.formatDate(testDate);
+                const dateHasComponents = formattedDate.includes('January') && formattedDate.includes('15');
+                addResult('formatDate method', dateHasComponents, `Returns: "${formattedDate}"`);
+
+                // Test getTimeBasedGreeting
+                const morningDate = new Date(2024, 0, 15, 9, 0);
+                const afternoonDate = new Date(2024, 0, 15, 14, 0);
+                const eveningDate = new Date(2024, 0, 15, 19, 0);
+                const nightDate = new Date(2024, 0, 15, 22, 0);
+
+                const morningGreeting = testWidget.getTimeBasedGreeting(morningDate);
+                const afternoonGreeting = testWidget.getTimeBasedGreeting(afternoonDate);
+                const eveningGreeting = testWidget.getTimeBasedGreeting(eveningDate);
+                const nightGreeting = testWidget.getTimeBasedGreeting(nightDate);
+
+                addResult('Morning greeting (9 AM)', morningGreeting === 'Good Morning', `Returns: "${morningGreeting}"`);
+                addResult('Afternoon greeting (2 PM)', afternoonGreeting === 'Good Afternoon', `Returns: "${afternoonGreeting}"`);
+                addResult('Evening greeting (7 PM)', eveningGreeting === 'Good Evening', `Returns: "${eveningGreeting}"`);
+                addResult('Night greeting (10 PM)', nightGreeting === 'Good Night', `Returns: "${nightGreeting}"`);
+
+                // Summary
+                const allTests = document.querySelectorAll('.test-result');
+                const passedTests = document.querySelectorAll('.test-result.pass');
+                results.innerHTML += `<p style="margin-top: 20px;"><strong>Total: ${allTests.length} tests, Passed: ${passedTests.length}, Failed: ${allTests.length - passedTests.length}</strong></p>`;
+            }, 100);
+        });
+    </script>
+</body>
+</html>

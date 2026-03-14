@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer Unit Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f7fa;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .pass {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .summary {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Focus Timer Unit Tests</h1>
+    
+    <div class="test-section">
+        <h2>About Unit Testing</h2>
+        <p>Unit tests verify specific examples and edge cases with predetermined inputs and expected outputs.</p>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+        let testCount = 0;
+        let passCount = 0;
+
+        function addSection(title) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = `<h2>${title}</h2>`;
+            results.appendChild(section);
+        }
+
+        function addResult(testName, passed, message, details = '') {
+            testCount++;
+            if (passed) passCount++;
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${passed ? '✓' : '✗'} ${testName}</strong><br>
+                ${message}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            results.appendChild(div);
+        }
+
+        // ====================================================================
+        // Timer Initialization Tests
+        // ====================================================================
+        addSection('Timer Initialization Tests (Requirement 3.1)');
+
+        // Create test container
+        const container = document.createElement('div');
+        container.innerHTML = `
+            <div class="timer-display" id="test-timer-display">25:00</div>
+            <button id="test-timer-start">Start</button>
+            <button id="test-timer-stop">Stop</button>
+            <button id="test-timer-reset">Reset</button>
+            <div id="test-timer-status"></div>
+        `;
+        document.body.appendChild(container);
+
+        // Test timer instantiation
+        const timer = new FocusTimer(container);
+        addResult(
+            'Timer instantiation',
+            timer instanceof FocusTimer,
+            'FocusTimer instance created successfully'
+        );
+
+        addResult(
+            'Timer initialized with 25 minutes (1500 seconds)',
+            timer.duration === 1500 && timer.remainingTime === 1500,
+            `Duration: ${timer.duration}s, Remaining: ${timer.remainingTime}s`
+        );
+
+        addResult(
+            'Timer starts in stopped state',
+            timer.isRunning === false && timer.intervalId === null,
+            `isRunning: ${timer.isRunning}, intervalId: ${timer.intervalId}`
+        );
+
+        addResult(
+            'Timer has required methods',
+            typeof timer.init === 'function' &&
+            typeof timer.start === 'function' &&
+            typeof timer.stop === 'function' &&
+            typeof timer.reset === 'function' &&
+            typeof timer.updateDisplay === 'function' &&
+            typeof timer.onTimerComplete === 'function',
+            'All required methods are present'
+        );
+
+        // Initialize timer
+        timer.init();
+        addResult(
+            'Timer initialization connects DOM elements',
+            timer.displayElement !== null &&
+            timer.startButton !== null &&
+            timer.stopButton !== null &&
+            timer.resetButton !== null &&
+            timer.statusElement !== null,
+            'All DOM elements connected'
+        );
+
+        // ====================================================================
+        // Display Format Tests
+        // ====================================================================
+        addSection('Display Format Tests (Requirement 3.6)');
+
+        // Test initial display
+        const initialDisplay = document.getElementById('test-timer-display').textContent;
+        addResult(
+            'Initial display shows 25:00',
+            initialDisplay === '25:00',
+            `Display: "${initialDisplay}"`
+        );
+
+        // Test display formatting with different times
+        timer.remainingTime = 1500;
+        timer.updateDisplay();
+        addResult(
+            'Display format for 1500 seconds (25:00)',
+            document.getElementById('test-timer-display').textContent === '25:00',
+            `Display: "${document.getElementById('test-timer-display').textContent}"`
+        );
+
+        timer.remainingTime = 599;
+        timer.updateDisplay();
+        addResult(
+            'Display format for 599 seconds (09:59)',
+            document.getElementById('test-timer-display').textContent === '09:59',
+            `Display: "${document.getElementById('test-timer-display').textContent}"`
+        );
+
+        timer.remainingTime = 60;
+        timer.updateDisplay();
+        addResult(
+            'Display format for 60 seconds (01:00)',
+            document.getElementById('test-timer-display').textContent === '01:00',
+            `Display: "${document.getElementById('test-timer-display').textContent}"`
+        );
+
+        timer.remainingTime = 5;
+        timer.updateDisplay();
+        addResult(
+            'Display format for 5 seconds (00:05)',
+            document.getElementById('test-timer-display').textContent === '00:05',
+            `Display: "${document.getElementById('test-timer-display').textContent}"`
+        );
+
+        timer.remainingTime = 0;
+        timer.updateDisplay();
+        addResult(
+            'Display format for 0 seconds (00:00)',
+            document.getElementById('test-timer-display').textContent === '00:00',
+            `Display: "${document.getElementById('test-timer-display').textContent}"`
+        );
+
+        // Reset timer for next tests
+        timer.remainingTime = 1500;
+        timer.updateDisplay();
+
+        // ====================================================================
+        // Start Functionality Tests
+        // ====================================================================
+        addSection('Start Functionality Tests (Requirement 3.2)');
+
+        // Test start from initial state
+        timer.start();
+        addResult(
+            'Start sets isRunning to true',
+            timer.isRunning === true,
+            `isRunning: ${timer.isRunning}`
+        );
+
+        addResult(
+            'Start creates interval',
+            timer.intervalId !== null,
+            `intervalId: ${timer.intervalId}`
+        );
+
+        const statusAfterStart = document.getElementById('test-timer-status').textContent;
+        addResult(
+            'Start updates status message',
+            statusAfterStart.includes('running'),
+            `Status: "${statusAfterStart}"`
+        );
+
+        // Test that start doesn't restart if already running
+        const firstIntervalId = timer.intervalId;
+        timer.start();
+        addResult(
+            'Start does not restart if already running',
+            timer.intervalId === firstIntervalId,
+            'Interval ID unchanged when start called on running timer'
+        );
+
+        // ====================================================================
+        // Stop Functionality Tests
+        // ====================================================================
+        addSection('Stop Functionality Tests (Requirement 3.3)');
+
+        // Stop the timer
+        timer.stop();
+        addResult(
+            'Stop sets isRunning to false',
+            timer.isRunning === false,
+            `isRunning: ${timer.isRunning}`
+        );
+
+        addResult(
+            'Stop clears interval',
+            timer.intervalId === null,
+            `intervalId: ${timer.intervalId}`
+        );
+
+        const statusAfterStop = document.getElementById('test-timer-status').textContent;
+        addResult(
+            'Stop updates status message',
+            statusAfterStop.includes('paused'),
+            `Status: "${statusAfterStop}"`
+        );
+
+        const timeAfterStop = timer.remainingTime;
+        addResult(
+            'Stop preserves remaining time',
+            timeAfterStop > 0 && timeAfterStop <= 1500,
+            `Remaining time: ${timeAfterStop}s`
+        );
+
+        // ====================================================================
+        // Reset Functionality Tests
+        // ====================================================================
+        addSection('Reset Functionality Tests (Requirement 3.4)');
+
+        // Reset from stopped state
+        timer.remainingTime = 500;
+        timer.reset();
+        addResult(
+            'Reset restores duration to 1500 seconds',
+            timer.remainingTime === 1500,
+            `Remaining time: ${timer.remainingTime}s`
+        );
+
+        addResult(
+            'Reset ensures timer is stopped',
+            timer.isRunning === false && timer.intervalId === null,
+            `isRunning: ${timer.isRunning}, intervalId: ${timer.intervalId}`
+        );
+
+        const statusAfterReset = document.getElementById('test-timer-status').textContent;
+        addResult(
+            'Reset clears status message',
+            statusAfterReset === '',
+            `Status: "${statusAfterReset}"`
+        );
+
+        const displayAfterReset = document.getElementById('test-timer-display').textContent;
+        addResult(
+            'Reset updates display to 25:00',
+            displayAfterReset === '25:00',
+            `Display: "${displayAfterReset}"`
+        );
+
+        // Test reset from running state
+        timer.start();
+        setTimeout(() => {
+            timer.reset();
+            addResult(
+                'Reset stops running timer',
+                timer.isRunning === false && timer.remainingTime === 1500,
+                `isRunning: ${timer.isRunning}, remaining: ${timer.remainingTime}s`
+            );
+        }, 100);
+
+        // ====================================================================
+        // Countdown Behavior Tests
+        // ====================================================================
+        addSection('Countdown Behavior Tests (Requirement 3.6)');
+
+        // Test countdown decrements
+        setTimeout(() => {
+            timer.remainingTime = 5;
+            timer.start();
+            
+            setTimeout(() => {
+                const timeAfter1Second = timer.remainingTime;
+                addResult(
+                    'Timer counts down by 1 second per second',
+                    timeAfter1Second < 5 && timeAfter1Second >= 3,
+                    `Started at 5s, now at ${timeAfter1Second}s after ~1 second`
+                );
+                
+                timer.stop();
+            }, 1100);
+        }, 200);
+
+        // ====================================================================
+        // Completion Handling Tests
+        // ====================================================================
+        addSection('Completion Handling Tests (Requirement 3.5)');
+
+        setTimeout(() => {
+            timer.remainingTime = 1;
+            timer.start();
+            
+            setTimeout(() => {
+                const finalTime = timer.remainingTime;
+                const finalRunning = timer.isRunning;
+                const completionStatus = document.getElementById('test-timer-status').textContent;
+                
+                addResult(
+                    'Timer reaches zero',
+                    finalTime === 0,
+                    `Final time: ${finalTime}s`
+                );
+                
+                addResult(
+                    'Timer stops when reaching zero',
+                    finalRunning === false,
+                    `isRunning: ${finalRunning}`
+                );
+                
+                addResult(
+                    'Timer shows completion notification',
+                    completionStatus.includes('complete'),
+                    `Status: "${completionStatus}"`
+                );
+                
+                const finalDisplay = document.getElementById('test-timer-display').textContent;
+                addResult(
+                    'Display shows 00:00 at completion',
+                    finalDisplay === '00:00',
+                    `Display: "${finalDisplay}"`
+                );
+
+                // ====================================================================
+                // Edge Cases Tests
+                // ====================================================================
+                addSection('Edge Cases Tests');
+
+                // Test multiple start/stop cycles
+                timer.reset();
+                timer.start();
+                timer.stop();
+                timer.start();
+                timer.stop();
+                addResult(
+                    'Multiple start/stop cycles work correctly',
+                    timer.isRunning === false && timer.remainingTime > 0,
+                    `Timer state preserved after multiple cycles`
+                );
+
+                // Test reset during countdown
+                timer.remainingTime = 100;
+                timer.start();
+                setTimeout(() => {
+                    timer.reset();
+                    addResult(
+                        'Reset during countdown restores full duration',
+                        timer.remainingTime === 1500 && !timer.isRunning,
+                        `Remaining: ${timer.remainingTime}s, isRunning: ${timer.isRunning}`
+                    );
+
+                    // Clean up
+                    timer.destroy();
+                    document.body.removeChild(container);
+
+                    // ====================================================================
+                    // Summary
+                    // ====================================================================
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.className = 'summary';
+                    summaryDiv.innerHTML = `
+                        <div>Test Summary</div>
+                        <div style="margin-top: 10px;">
+                            Total Tests: ${testCount} | 
+                            Passed: <span style="color: #28a745;">${passCount}</span> | 
+                            Failed: <span style="color: #dc3545;">${testCount - passCount}</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.9em;">
+                            ${passCount === testCount 
+                                ? '🎉 All unit tests passed!' 
+                                : '⚠️ Some tests failed - review the results above'}
+                        </div>
+                    `;
+                    results.appendChild(summaryDiv);
+                }, 100);
+            }, 1500);
+        }, 2500);
+    </script>
+</body>
+</html>

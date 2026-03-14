@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessibility Test - Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-results {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            max-width: 400px;
+            z-index: 1000;
+            font-size: 14px;
+        }
+        .test-results h3 {
+            margin-top: 0;
+            color: #1a252f;
+        }
+        .test-item {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .test-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-results" id="test-results">
+        <h3>Accessibility & Typography Tests</h3>
+        <div id="test-output"></div>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Productivity Dashboard</h1>
+        </header>
+        
+        <main class="dashboard-main" role="main">
+            <!-- Greeting Widget -->
+            <section class="widget greeting-widget" id="greeting-widget" aria-label="Time and greeting display">
+                <div class="greeting-content">
+                    <div class="time-display" id="time-display" role="timer" aria-live="polite" aria-atomic="true">3:45 PM</div>
+                    <div class="date-display" id="date-display" aria-live="polite">Monday, January 15</div>
+                    <div class="greeting-message" id="greeting-message" aria-live="polite">Good Afternoon</div>
+                </div>
+            </section>
+
+            <!-- Focus Timer Widget -->
+            <section class="widget timer-widget" id="timer-widget" aria-label="Focus timer">
+                <h2>Focus Timer</h2>
+                <div class="timer-display" id="timer-display" role="timer" aria-live="polite" aria-atomic="true">25:00</div>
+                <div class="timer-controls" role="group" aria-label="Timer controls">
+                    <button id="timer-start" class="btn btn-primary" aria-label="Start timer">Start</button>
+                    <button id="timer-stop" class="btn btn-secondary" aria-label="Stop timer">Stop</button>
+                    <button id="timer-reset" class="btn btn-secondary" aria-label="Reset timer">Reset</button>
+                </div>
+                <div class="timer-status" id="timer-status" role="status" aria-live="polite"></div>
+            </section>
+
+            <!-- Task Manager Widget -->
+            <section class="widget task-widget" id="task-widget" aria-label="Task manager">
+                <h2>Tasks</h2>
+                <div class="task-input-container" role="group" aria-label="Add new task">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="200" aria-label="New task text">
+                    <button id="add-task-btn" class="btn btn-primary" aria-label="Add task">Add</button>
+                </div>
+                <div class="task-list" id="task-list" role="list" aria-label="Task list">
+                    <li class="task-item" role="listitem">
+                        <input type="checkbox" class="task-checkbox" aria-label="Mark task as complete">
+                        <span class="task-text">Sample task for testing</span>
+                        <div class="task-actions" role="group" aria-label="Task actions">
+                            <button class="btn btn-edit" aria-label="Edit task">Edit</button>
+                            <button class="btn btn-danger" aria-label="Delete task">Delete</button>
+                        </div>
+                    </li>
+                </div>
+            </section>
+
+            <!-- Quick Links Widget -->
+            <section class="widget links-widget" id="links-widget" aria-label="Quick links">
+                <h2>Quick Links</h2>
+                <div class="link-input-container" role="group" aria-label="Add new link">
+                    <input type="url" id="link-url-input" placeholder="Enter URL..." maxlength="500" aria-label="Link URL">
+                    <input type="text" id="link-name-input" placeholder="Display name..." maxlength="50" aria-label="Link display name">
+                    <button id="add-link-btn" class="btn btn-primary" aria-label="Add link">Add</button>
+                </div>
+                <div class="links-list" id="links-list" role="list" aria-label="Quick links list">
+                    <div class="link-item" role="listitem">
+                        <button class="btn btn-link" aria-label="Open link in new tab">Sample Link</button>
+                        <button class="btn btn-danger btn-small" aria-label="Delete link">×</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Accessibility and Typography Tests
+        function runTests() {
+            const output = document.getElementById('test-output');
+            const results = [];
+
+            // Test 1: Font size minimum 14px
+            const bodyFontSize = window.getComputedStyle(document.body).fontSize;
+            const bodyFontSizeNum = parseFloat(bodyFontSize);
+            results.push({
+                name: 'Body font size ≥ 14px',
+                pass: bodyFontSizeNum >= 14,
+                value: bodyFontSize
+            });
+
+            // Test 2: Task text font size
+            const taskText = document.querySelector('.task-text');
+            if (taskText) {
+                const taskFontSize = window.getComputedStyle(taskText).fontSize;
+                const taskFontSizeNum = parseFloat(taskFontSize);
+                results.push({
+                    name: 'Task text font size ≥ 14px',
+                    pass: taskFontSizeNum >= 14,
+                    value: taskFontSize
+                });
+            }
+
+            // Test 3: Button font size
+            const button = document.querySelector('.btn');
+            if (button) {
+                const btnFontSize = window.getComputedStyle(button).fontSize;
+                const btnFontSizeNum = parseFloat(btnFontSize);
+                results.push({
+                    name: 'Button font size ≥ 14px',
+                    pass: btnFontSizeNum >= 14,
+                    value: btnFontSize
+                });
+            }
+
+            // Test 4: ARIA labels present
+            const ariaLabels = document.querySelectorAll('[aria-label]');
+            results.push({
+                name: 'ARIA labels present',
+                pass: ariaLabels.length > 0,
+                value: `${ariaLabels.length} elements with aria-label`
+            });
+
+            // Test 5: ARIA live regions
+            const ariaLive = document.querySelectorAll('[aria-live]');
+            results.push({
+                name: 'ARIA live regions present',
+                pass: ariaLive.length > 0,
+                value: `${ariaLive.length} live regions`
+            });
+
+            // Test 6: Role attributes
+            const roles = document.querySelectorAll('[role]');
+            results.push({
+                name: 'Role attributes present',
+                pass: roles.length > 0,
+                value: `${roles.length} elements with roles`
+            });
+
+            // Test 7: Main landmark
+            const main = document.querySelector('main[role="main"]');
+            results.push({
+                name: 'Main landmark present',
+                pass: main !== null,
+                value: main ? 'Found' : 'Not found'
+            });
+
+            // Test 8: Contrast ratio check (simplified - checking color values)
+            const widget = document.querySelector('.widget h2');
+            if (widget) {
+                const color = window.getComputedStyle(widget).color;
+                const bgColor = window.getComputedStyle(widget.parentElement).backgroundColor;
+                results.push({
+                    name: 'Widget heading colors',
+                    pass: true,
+                    value: `Text: ${color}, BG: ${bgColor}`,
+                    info: true
+                });
+            }
+
+            // Test 9: Focus indicators
+            const focusableElements = document.querySelectorAll('button, input, a');
+            results.push({
+                name: 'Focusable elements',
+                pass: focusableElements.length > 0,
+                value: `${focusableElements.length} focusable elements`
+            });
+
+            // Display results
+            output.innerHTML = results.map(result => {
+                const className = result.info ? 'test-info' : (result.pass ? 'test-pass' : 'test-fail');
+                const status = result.info ? 'ℹ️' : (result.pass ? '✓' : '✗');
+                return `<div class="test-item ${className}">
+                    <strong>${status} ${result.name}</strong><br>
+                    <small>${result.value}</small>
+                </div>`;
+            }).join('');
+
+            // Summary
+            const passed = results.filter(r => !r.info && r.pass).length;
+            const total = results.filter(r => !r.info).length;
+            output.innerHTML += `<div class="test-item test-info" style="margin-top: 12px;">
+                <strong>Summary: ${passed}/${total} tests passed</strong>
+            </div>`;
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

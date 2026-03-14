@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Model Test</title>
+</head>
+<body>
+    <h1>Link Model and QuickLinksManager Test</h1>
+    <div id="test-results"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+        
+        function log(message, isSuccess = true) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            p.style.color = isSuccess ? 'green' : 'red';
+            results.appendChild(p);
+        }
+
+        // Test 1: Link creation with valid data
+        try {
+            const link1 = new Link('https://example.com', 'Example Site');
+            if (link1.url === 'https://example.com' && link1.displayName === 'Example Site') {
+                log('✓ Test 1 PASSED: Link created with valid data');
+            } else {
+                log('✗ Test 1 FAILED: Link properties not set correctly', false);
+            }
+        } catch (e) {
+            log('✗ Test 1 FAILED: ' + e.message, false);
+        }
+
+        // Test 2: Link ID generation
+        try {
+            const link2 = new Link('https://test.com', 'Test');
+            if (link2.id && link2.id.startsWith('link-')) {
+                log('✓ Test 2 PASSED: Unique ID generated');
+            } else {
+                log('✗ Test 2 FAILED: ID not generated correctly', false);
+            }
+        } catch (e) {
+            log('✗ Test 2 FAILED: ' + e.message, false);
+        }
+
+        // Test 3: Link validation - valid URL
+        try {
+            const link3 = new Link('https://google.com', 'Google');
+            if (link3.validate()) {
+                log('✓ Test 3 PASSED: Valid link passes validation');
+            } else {
+                log('✗ Test 3 FAILED: Valid link failed validation', false);
+            }
+        } catch (e) {
+            log('✗ Test 3 FAILED: ' + e.message, false);
+        }
+
+        // Test 4: Link validation - empty URL (Requirement 9.3)
+        try {
+            const link4 = new Link('', 'Empty URL');
+            if (!link4.validate()) {
+                log('✓ Test 4 PASSED: Empty URL rejected (Requirement 9.3)');
+            } else {
+                log('✗ Test 4 FAILED: Empty URL should be rejected', false);
+            }
+        } catch (e) {
+            log('✗ Test 4 FAILED: ' + e.message, false);
+        }
+
+        // Test 5: Link validation - empty display name (Requirement 9.3)
+        try {
+            const link5 = new Link('https://test.com', '');
+            if (!link5.validate()) {
+                log('✓ Test 5 PASSED: Empty display name rejected (Requirement 9.3)');
+            } else {
+                log('✗ Test 5 FAILED: Empty display name should be rejected', false);
+            }
+        } catch (e) {
+            log('✗ Test 5 FAILED: ' + e.message, false);
+        }
+
+        // Test 6: Link validation - invalid URL format
+        try {
+            const link6 = new Link('not-a-url', 'Invalid');
+            if (!link6.validate()) {
+                log('✓ Test 6 PASSED: Invalid URL format rejected');
+            } else {
+                log('✗ Test 6 FAILED: Invalid URL should be rejected', false);
+            }
+        } catch (e) {
+            log('✗ Test 6 FAILED: ' + e.message, false);
+        }
+
+        // Test 7: QuickLinksManager - add valid link (Requirements 9.1, 9.2)
+        try {
+            // Clear localStorage first
+            localStorage.removeItem('productivity-dashboard-links');
+            
+            const container = document.createElement('div');
+            const manager = new QuickLinksManager(container);
+            manager.links = [];
+            
+            const linkId = manager.addLink('https://github.com', 'GitHub');
+            if (linkId && manager.links.length === 1) {
+                log('✓ Test 7 PASSED: Link added successfully (Requirements 9.1, 9.2)');
+            } else {
+                log('✗ Test 7 FAILED: Link not added correctly', false);
+            }
+        } catch (e) {
+            log('✗ Test 7 FAILED: ' + e.message, false);
+        }
+
+        // Test 8: QuickLinksManager - reject empty URL (Requirement 9.3)
+        try {
+            const container = document.createElement('div');
+            const manager = new QuickLinksManager(container);
+            manager.links = [];
+            
+            const linkId = manager.addLink('', 'Empty URL');
+            if (linkId === null && manager.links.length === 0) {
+                log('✓ Test 8 PASSED: Empty URL rejected (Requirement 9.3)');
+            } else {
+                log('✗ Test 8 FAILED: Empty URL should be rejected', false);
+            }
+        } catch (e) {
+            log('✗ Test 8 FAILED: ' + e.message, false);
+        }
+
+        // Test 9: QuickLinksManager - reject empty display name (Requirement 9.3)
+        try {
+            const container = document.createElement('div');
+            const manager = new QuickLinksManager(container);
+            manager.links = [];
+            
+            const linkId = manager.addLink('https://test.com', '');
+            if (linkId === null && manager.links.length === 0) {
+                log('✓ Test 9 PASSED: Empty display name rejected (Requirement 9.3)');
+            } else {
+                log('✗ Test 9 FAILED: Empty display name should be rejected', false);
+            }
+        } catch (e) {
+            log('✗ Test 9 FAILED: ' + e.message, false);
+        }
+
+        // Test 10: QuickLinksManager - Local Storage persistence (Requirement 9.2)
+        try {
+            localStorage.removeItem('productivity-dashboard-links');
+            
+            const container = document.createElement('div');
+            const manager1 = new QuickLinksManager(container);
+            manager1.links = [];
+            manager1.addLink('https://example.com', 'Example');
+            
+            // Create new manager instance and load
+            const manager2 = new QuickLinksManager(container);
+            manager2.loadLinks();
+            
+            if (manager2.links.length === 1 && 
+                manager2.links[0].url === 'https://example.com' &&
+                manager2.links[0].displayName === 'Example') {
+                log('✓ Test 10 PASSED: Links persisted to Local Storage (Requirement 9.2)');
+            } else {
+                log('✗ Test 10 FAILED: Links not persisted correctly', false);
+            }
+        } catch (e) {
+            log('✗ Test 10 FAILED: ' + e.message, false);
+        }
+
+        // Test 11: QuickLinksManager - delete link
+        try {
+            localStorage.removeItem('productivity-dashboard-links');
+            
+            const container = document.createElement('div');
+            const manager = new QuickLinksManager(container);
+            manager.links = [];
+            
+            const linkId = manager.addLink('https://test.com', 'Test');
+            const deleted = manager.deleteLink(linkId);
+            
+            if (deleted && manager.links.length === 0) {
+                log('✓ Test 11 PASSED: Link deleted successfully');
+            } else {
+                log('✗ Test 11 FAILED: Link not deleted correctly', false);
+            }
+        } catch (e) {
+            log('✗ Test 11 FAILED: ' + e.message, false);
+        }
+
+        // Test 12: Unique ID generation for multiple links
+        try {
+            const link1 = new Link('https://site1.com', 'Site 1');
+            const link2 = new Link('https://site2.com', 'Site 2');
+            const link3 = new Link('https://site3.com', 'Site 3');
+            
+            const ids = [link1.id, link2.id, link3.id];
+            const uniqueIds = new Set(ids);
+            
+            if (uniqueIds.size === 3) {
+                log('✓ Test 12 PASSED: All link IDs are unique');
+            } else {
+                log('✗ Test 12 FAILED: Duplicate IDs generated', false);
+            }
+        } catch (e) {
+            log('✗ Test 12 FAILED: ' + e.message, false);
+        }
+
+        // Clean up
+        localStorage.removeItem('productivity-dashboard-links');
+        
+        log('\n=== All tests completed ===');
+    </script>
+</body>
+</html>

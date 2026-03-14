@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Persistence Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 3px;
+    }
+    .pass {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .fail {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    #task-list {
+      list-style: none;
+      padding: 0;
+    }
+    .task-item {
+      padding: 10px;
+      margin: 5px 0;
+      background: #f8f9fa;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Task Persistence Test</h1>
+  
+  <div class="test-section">
+    <h2>Test Controls</h2>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <button onclick="viewStorage()">View Storage</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Task Manager Interface</h2>
+    <div id="task-widget">
+      <input type="text" id="task-input" placeholder="Enter task...">
+      <button id="add-task-btn">Add Task</button>
+      <ul id="task-list"></ul>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-results"></div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    let taskManager;
+
+    // Initialize task manager
+    document.addEventListener('DOMContentLoaded', () => {
+      const taskContainer = document.getElementById('task-widget');
+      taskManager = new TaskManager(taskContainer);
+      taskManager.init();
+    });
+
+    function logResult(testName, passed, message) {
+      const resultsDiv = document.getElementById('test-results');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+      resultDiv.innerHTML = `<strong>${testName}:</strong> ${passed ? 'PASS' : 'FAIL'} - ${message}`;
+      resultsDiv.appendChild(resultDiv);
+    }
+
+    function clearStorage() {
+      localStorage.clear();
+      location.reload();
+    }
+
+    function viewStorage() {
+      const tasks = localStorage.getItem('productivity-dashboard-tasks');
+      console.log('Storage contents:', tasks);
+      alert('Storage contents (check console): ' + (tasks || 'Empty'));
+    }
+
+    async function runAllTests() {
+      const resultsDiv = document.getElementById('test-results');
+      resultsDiv.innerHTML = '<h3>Running tests...</h3>';
+
+      // Test 1: Automatic saving on task creation
+      console.log('Test 1: Automatic saving on task creation');
+      localStorage.clear();
+      taskManager.tasks = [];
+      taskManager.renderTasks();
+      
+      const taskId1 = taskManager.addTask('Test Task 1');
+      const savedData1 = JSON.parse(localStorage.getItem('productivity-dashboard-tasks'));
+      const test1Pass = savedData1 && savedData1.length === 1 && savedData1[0].text === 'Test Task 1';
+      logResult('Test 1: Automatic saving on task creation', test1Pass, 
+        test1Pass ? 'Task saved to Local Storage' : 'Task not saved properly');
+
+      // Test 2: Automatic saving on task edit
+      console.log('Test 2: Automatic saving on task edit');
+      taskManager.editTask(taskId1, 'Updated Task 1');
+      const savedData2 = JSON.parse(localStorage.getItem('productivity-dashboard-tasks'));
+      const test2Pass = savedData2 && savedData2[0].text === 'Updated Task 1';
+      logResult('Test 2: Automatic saving on task edit', test2Pass,
+        test2Pass ? 'Edit saved to Local Storage' : 'Edit not saved properly');
+
+      // Test 3: Automatic saving on task toggle
+      console.log('Test 3: Automatic saving on task toggle');
+      taskManager.toggleTaskComplete(taskId1);
+      const savedData3 = JSON.parse(localStorage.getItem('productivity-dashboard-tasks'));
+      const test3Pass = savedData3 && savedData3[0].completed === true;
+      logResult('Test 3: Automatic saving on task toggle', test3Pass,
+        test3Pass ? 'Toggle saved to Local Storage' : 'Toggle not saved properly');
+
+      // Test 4: Automatic saving on task deletion
+      console.log('Test 4: Automatic saving on task deletion');
+      taskManager.deleteTask(taskId1);
+      const savedData4 = JSON.parse(localStorage.getItem('productivity-dashboard-tasks'));
+      const test4Pass = savedData4 && savedData4.length === 0;
+      logResult('Test 4: Automatic saving on task deletion', test4Pass,
+        test4Pass ? 'Deletion saved to Local Storage' : 'Deletion not saved properly');
+
+      // Test 5: Task loading on initialization
+      console.log('Test 5: Task loading on initialization');
+      // Add some tasks
+      taskManager.addTask('Task A');
+      taskManager.addTask('Task B');
+      taskManager.addTask('Task C');
+      
+      // Create new instance to test loading
+      const newTaskManager = new TaskManager(document.getElementById('task-widget'));
+      newTaskManager.init();
+      
+      const test5Pass = newTaskManager.tasks.length === 3 && 
+                        newTaskManager.tasks[0].text === 'Task A' &&
+                        newTaskManager.tasks[1].text === 'Task B' &&
+                        newTaskManager.tasks[2].text === 'Task C';
+      logResult('Test 5: Task loading on initialization', test5Pass,
+        test5Pass ? 'Tasks loaded correctly from Local Storage' : 'Tasks not loaded properly');
+
+      // Test 6: Empty task list handling
+      console.log('Test 6: Empty task list handling');
+      localStorage.clear();
+      const emptyTaskManager = new TaskManager(document.getElementById('task-widget'));
+      emptyTaskManager.init();
+      
+      const test6Pass = emptyTaskManager.tasks.length === 0;
+      const emptyMessage = document.querySelector('.task-empty');
+      const test6PassUI = emptyMessage && emptyMessage.textContent.includes('No tasks yet');
+      logResult('Test 6: Empty task list handling', test6Pass && test6PassUI,
+        test6Pass && test6PassUI ? 'Empty list handled correctly' : 'Empty list not handled properly');
+
+      // Test 7: Task order preservation
+      console.log('Test 7: Task order preservation');
+      localStorage.clear();
+      const orderTaskManager = new TaskManager(document.getElementById('task-widget'));
+      orderTaskManager.init();
+      
+      orderTaskManager.addTask('First');
+      orderTaskManager.addTask('Second');
+      orderTaskManager.addTask('Third');
+      
+      // Create new instance to test order preservation
+      const orderCheckManager = new TaskManager(document.getElementById('task-widget'));
+      orderCheckManager.init();
+      
+      const test7Pass = orderCheckManager.tasks.length === 3 &&
+                        orderCheckManager.tasks[0].text === 'First' &&
+                        orderCheckManager.tasks[1].text === 'Second' &&
+                        orderCheckManager.tasks[2].text === 'Third';
+      logResult('Test 7: Task order preservation', test7Pass,
+        test7Pass ? 'Task order preserved across sessions' : 'Task order not preserved');
+
+      // Test 8: Multiple operations persistence
+      console.log('Test 8: Multiple operations persistence');
+      localStorage.clear();
+      const multiOpManager = new TaskManager(document.getElementById('task-widget'));
+      multiOpManager.init();
+      
+      const id1 = multiOpManager.addTask('Task 1');
+      const id2 = multiOpManager.addTask('Task 2');
+      const id3 = multiOpManager.addTask('Task 3');
+      
+      multiOpManager.toggleTaskComplete(id2);
+      multiOpManager.editTask(id1, 'Modified Task 1');
+      multiOpManager.deleteTask(id3);
+      
+      // Verify in storage
+      const finalData = JSON.parse(localStorage.getItem('productivity-dashboard-tasks'));
+      const test8Pass = finalData && finalData.length === 2 &&
+                        finalData[0].text === 'Modified Task 1' &&
+                        finalData[1].text === 'Task 2' &&
+                        finalData[1].completed === true;
+      logResult('Test 8: Multiple operations persistence', test8Pass,
+        test8Pass ? 'All operations persisted correctly' : 'Operations not persisted properly');
+
+      // Restore task manager state
+      taskManager = multiOpManager;
+      
+      console.log('All tests completed');
+    }
+  </script>
+</body>
+</html>

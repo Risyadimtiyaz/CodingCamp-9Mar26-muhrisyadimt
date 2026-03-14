@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Verification</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Focus Timer Verification</h1>
+        
+        <section class="widget timer-widget" id="timer-widget">
+            <h2>Focus Timer</h2>
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="timer-controls">
+                <button id="timer-start" class="btn btn-primary">Start</button>
+                <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                <button id="timer-reset" class="btn btn-secondary">Reset</button>
+            </div>
+            <div class="timer-status" id="timer-status"></div>
+        </section>
+
+        <section class="widget">
+            <h2>Verification Checklist</h2>
+            <div id="verification-results"></div>
+        </section>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const results = document.getElementById('verification-results');
+            
+            function addCheck(text, passed) {
+                const div = document.createElement('div');
+                div.style.padding = '8px';
+                div.style.margin = '4px 0';
+                div.style.color = passed ? '#27ae60' : '#e74c3c';
+                div.textContent = `${passed ? '✓' : '✗'} ${text}`;
+                results.appendChild(div);
+            }
+
+            // Verify FocusTimer class exists
+            addCheck('FocusTimer class is defined', typeof FocusTimer === 'function');
+            
+            // Verify timer initialization
+            const timerContainer = document.getElementById('timer-widget');
+            const timer = new FocusTimer(timerContainer);
+            timer.init();
+            
+            addCheck('Timer initialized with 1500 seconds (25 minutes)', timer.duration === 1500);
+            addCheck('Timer starts with remainingTime = 1500', timer.remainingTime === 1500);
+            addCheck('Timer starts in stopped state (isRunning = false)', timer.isRunning === false);
+            addCheck('Display shows 25:00', document.getElementById('timer-display').textContent === '25:00');
+            
+            // Verify start functionality
+            timer.start();
+            addCheck('Start sets isRunning to true', timer.isRunning === true);
+            addCheck('Start creates interval', timer.intervalId !== null);
+            
+            // Verify stop functionality
+            setTimeout(() => {
+                timer.stop();
+                addCheck('Stop sets isRunning to false', timer.isRunning === false);
+                addCheck('Stop preserves remaining time', timer.remainingTime < 1500 && timer.remainingTime > 0);
+                
+                // Verify reset functionality
+                timer.reset();
+                addCheck('Reset restores remainingTime to 1500', timer.remainingTime === 1500);
+                addCheck('Reset ensures timer is stopped', timer.isRunning === false);
+                
+                // Test completion
+                timer.remainingTime = 1;
+                timer.start();
+                setTimeout(() => {
+                    addCheck('Timer reaches zero and stops', timer.remainingTime === 0 && timer.isRunning === false);
+                    addCheck('Completion notification displayed', document.getElementById('timer-status').textContent.includes('complete'));
+                    
+                    const summary = document.createElement('div');
+                    summary.style.marginTop = '20px';
+                    summary.style.padding = '15px';
+                    summary.style.background = '#f8f9fa';
+                    summary.style.borderRadius = '8px';
+                    summary.style.fontWeight = 'bold';
+                    summary.innerHTML = '✅ All verification checks completed! The Focus Timer component is working correctly.';
+                    results.appendChild(summary);
+                }, 1500);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting Widget Property Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f7fa;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .pass {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .property-info {
+            background: #e7f3ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .property-info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .summary {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Greeting Widget Property-Based Tests</h1>
+    
+    <div class="test-section">
+        <h2>About Property-Based Testing</h2>
+        <p>Property-based tests verify that certain properties hold true across all possible inputs, not just specific examples. These tests use randomized data generation to explore the input space comprehensively.</p>
+        <p><strong>Test Configuration:</strong> 100 iterations per property test</p>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fast-check@3.15.0/lib/bundle.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+        let testCount = 0;
+        let passCount = 0;
+
+        function addPropertyInfo(propertyNumber, propertyName, validates) {
+            const div = document.createElement('div');
+            div.className = 'property-info';
+            div.innerHTML = `
+                <h3>Property ${propertyNumber}: ${propertyName}</h3>
+                <p><strong>Validates:</strong> ${validates}</p>
+            `;
+            results.appendChild(div);
+        }
+
+        function addResult(testName, passed, message, details = '') {
+            testCount++;
+            if (passed) passCount++;
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${passed ? '✓' : '✗'} ${testName}</strong><br>
+                ${message}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            results.appendChild(div);
+        }
+
+        function addSection(title) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = `<h2>${title}</h2>`;
+            results.appendChild(section);
+        }
+
+        // ====================================================================
+        // Property 1: Time Format Consistency
+        // ====================================================================
+        addSection('Property 1: Time Format Consistency');
+        addPropertyInfo(1, 'Time format consistency', 'Requirements 1.1');
+
+        try {
+            const widget = new GreetingWidget(document.createElement('div'));
+            
+            fc.assert(
+                fc.property(
+                    fc.integer(0, 23), // hour
+                    fc.integer(0, 59), // minute
+                    fc.integer(0, 59), // second
+                    (hour, minute, second) => {
+                        const testDate = new Date(2024, 0, 1, hour, minute, second);
+                        const formattedTime = widget.formatTime(testDate);
+                        
+                        // Property: Must contain AM or PM
+                        const hasAMPM = formattedTime.includes('AM') || formattedTime.includes('PM');
+                        
+                        // Property: Must contain colon separator
+                        const hasColon = formattedTime.includes(':');
+                        
+                        // Property: Must be a non-empty string
+                        const isNonEmpty = formattedTime.length > 0;
+                        
+                        return hasAMPM && hasColon && isNonEmpty;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+            
+            addResult(
+                'Time format consistency property',
+                true,
+                'All 100 random time values produced valid 12-hour format with AM/PM',
+                'Tested with random hours (0-23), minutes (0-59), and seconds (0-59)'
+            );
+        } catch (error) {
+            addResult(
+                'Time format consistency property',
+                false,
+                `Property violation detected: ${error.message}`,
+                error.stack
+            );
+        }
+
+        // ====================================================================
+        // Property 2: Date Format Completeness
+        // ====================================================================
+        addSection('Property 2: Date Format Completeness');
+        addPropertyInfo(2, 'Date format completeness', 'Requirements 1.2');
+
+        try {
+            const widget = new GreetingWidget(document.createElement('div'));
+            
+            fc.assert(
+                fc.property(
+                    fc.integer(2000, 2100), // year
+                    fc.integer(0, 11),      // month (0-11 in JavaScript)
+                    fc.integer(1, 28),      // day (1-28 to avoid invalid dates)
+                    (year, month, day) => {
+                        const testDate = new Date(year, month, day);
+                        const formattedDate = widget.formatDate(testDate);
+                        
+                        // Property: Must contain a comma (separates weekday from date)
+                        const hasComma = formattedDate.includes(',');
+                        
+                        // Property: Must be a non-empty string
+                        const isNonEmpty = formattedDate.length > 0;
+                        
+                        // Property: Must contain the day number
+                        const dayStr = day.toString();
+                        const hasDay = formattedDate.includes(dayStr);
+                        
+                        // Property: Should contain month name (at least 3 chars for abbreviated)
+                        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                          'July', 'August', 'September', 'October', 'November', 'December'];
+                        const hasMonth = monthNames.some(m => formattedDate.includes(m));
+                        
+                        // Property: Should contain weekday name
+                        const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const hasWeekday = weekdays.some(w => formattedDate.includes(w));
+                        
+                        return hasComma && isNonEmpty && hasDay && hasMonth && hasWeekday;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+            
+            addResult(
+                'Date format completeness property',
+                true,
+                'All 100 random dates included weekday, month name, and day number',
+                'Tested with random dates from year 2000-2100'
+            );
+        } catch (error) {
+            addResult(
+                'Date format completeness property',
+                false,
+                `Property violation detected: ${error.message}`,
+                error.stack
+            );
+        }
+
+        // ====================================================================
+        // Property 3: Time-Based Greeting Accuracy
+        // ====================================================================
+        addSection('Property 3: Time-Based Greeting Accuracy');
+        addPropertyInfo(3, 'Time-based greeting accuracy', 'Requirements 2.1, 2.2, 2.3, 2.4');
+
+        try {
+            const widget = new GreetingWidget(document.createElement('div'));
+            
+            fc.assert(
+                fc.property(
+                    fc.integer(0, 23), // hour
+                    fc.integer(0, 59), // minute
+                    (hour, minute) => {
+                        const testDate = new Date(2024, 0, 1, hour, minute);
+                        const greeting = widget.getTimeBasedGreeting(testDate);
+                        
+                        // Property: Greeting must match the time range
+                        if (hour >= 5 && hour < 12) {
+                            return greeting === "Good Morning";
+                        } else if (hour >= 12 && hour < 17) {
+                            return greeting === "Good Afternoon";
+                        } else if (hour >= 17 && hour < 21) {
+                            return greeting === "Good Evening";
+                        } else {
+                            // hour >= 21 or hour < 5
+                            return greeting === "Good Night";
+                        }
+                    }
+                ),
+                { numRuns: 100 }
+            );
+            
+            addResult(
+                'Time-based greeting accuracy property',
+                true,
+                'All 100 random times produced correct greeting for their time range',
+                'Morning (5-11), Afternoon (12-16), Evening (17-20), Night (21-4)'
+            );
+        } catch (error) {
+            addResult(
+                'Time-based greeting accuracy property',
+                false,
+                `Property violation detected: ${error.message}`,
+                error.stack
+            );
+        }
+
+        // ====================================================================
+        // Additional Edge Case Tests
+        // ====================================================================
+        addSection('Edge Case Validation');
+
+        try {
+            const widget = new GreetingWidget(document.createElement('div'));
+            
+            // Test boundary times for greeting transitions
+            const boundaryTests = [
+                { hour: 4, minute: 59, expected: "Good Night", desc: "4:59 AM (just before morning)" },
+                { hour: 5, minute: 0, expected: "Good Morning", desc: "5:00 AM (morning starts)" },
+                { hour: 11, minute: 59, expected: "Good Morning", desc: "11:59 AM (last minute of morning)" },
+                { hour: 12, minute: 0, expected: "Good Afternoon", desc: "12:00 PM (afternoon starts)" },
+                { hour: 16, minute: 59, expected: "Good Afternoon", desc: "4:59 PM (last minute of afternoon)" },
+                { hour: 17, minute: 0, expected: "Good Evening", desc: "5:00 PM (evening starts)" },
+                { hour: 20, minute: 59, expected: "Good Evening", desc: "8:59 PM (last minute of evening)" },
+                { hour: 21, minute: 0, expected: "Good Night", desc: "9:00 PM (night starts)" },
+                { hour: 23, minute: 59, expected: "Good Night", desc: "11:59 PM (end of day)" },
+                { hour: 0, minute: 0, expected: "Good Night", desc: "12:00 AM (midnight)" }
+            ];
+            
+            let allBoundariesPass = true;
+            let failedBoundaries = [];
+            
+            boundaryTests.forEach(test => {
+                const testDate = new Date(2024, 0, 1, test.hour, test.minute);
+                const greeting = widget.getTimeBasedGreeting(testDate);
+                if (greeting !== test.expected) {
+                    allBoundariesPass = false;
+                    failedBoundaries.push(`${test.desc}: expected "${test.expected}", got "${greeting}"`);
+                }
+            });
+            
+            addResult(
+                'Greeting boundary transitions',
+                allBoundariesPass,
+                allBoundariesPass 
+                    ? 'All 10 boundary time transitions produce correct greetings'
+                    : 'Some boundary transitions failed',
+                failedBoundaries.length > 0 ? failedBoundaries.join('<br>') : ''
+            );
+        } catch (error) {
+            addResult(
+                'Greeting boundary transitions',
+                false,
+                `Test error: ${error.message}`,
+                error.stack
+            );
+        }
+
+        // ====================================================================
+        // Summary
+        // ====================================================================
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'summary';
+        summaryDiv.innerHTML = `
+            <div>Test Summary</div>
+            <div style="margin-top: 10px;">
+                Total Tests: ${testCount} | 
+                Passed: <span style="color: #28a745;">${passCount}</span> | 
+                Failed: <span style="color: #dc3545;">${testCount - passCount}</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9em;">
+                ${passCount === testCount 
+                    ? '🎉 All property-based tests passed!' 
+                    : '⚠️ Some tests failed - review the results above'}
+            </div>
+        `;
+        results.appendChild(summaryDiv);
+    </script>
+</body>
+</html>

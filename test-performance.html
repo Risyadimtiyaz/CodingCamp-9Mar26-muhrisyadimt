@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Tests - Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .test-pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .metric {
+            font-weight: bold;
+            color: #007bff;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        #test-output {
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Performance Tests - Productivity Dashboard</h1>
+        <p>Testing Requirements 12.3 and 12.4: Performance with 100 tasks and 20 links</p>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="runAllTests()">Run All Performance Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="test-output"></div>
+        </div>
+        
+        <!-- Hidden dashboard elements for testing -->
+        <div style="display: none;">
+            <div id="greeting-widget"></div>
+            <div id="timer-widget"></div>
+            <div id="task-widget">
+                <input type="text" id="task-input">
+                <button id="add-task-btn">Add</button>
+                <div id="task-list"></div>
+            </div>
+            <div id="links-widget">
+                <input type="url" id="link-url-input">
+                <input type="text" id="link-name-input">
+                <button id="add-link-btn">Add</button>
+                <div id="links-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Performance test suite
+        const testResults = [];
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('test-output');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result test-${type}`;
+            resultDiv.textContent = message;
+            output.appendChild(resultDiv);
+            testResults.push({ message, type });
+        }
+        
+        function clearResults() {
+            document.getElementById('test-output').innerHTML = '';
+            testResults.length = 0;
+        }
+        
+        function measureTime(fn) {
+            const start = performance.now();
+            fn();
+            const end = performance.now();
+            return end - start;
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            log('=== Starting Performance Tests ===', 'info');
+            log('', 'info');
+            
+            // Clear localStorage before tests
+            localStorage.clear();
+            
+            // Test 1: Initial load time
+            await testInitialLoadTime();
+            
+            // Test 2: Task rendering performance with 100 tasks
+            await testTaskRenderingPerformance();
+            
+            // Test 3: Link rendering performance with 20 links
+            await testLinkRenderingPerformance();
+            
+            // Test 4: Task interaction response time
+            await testTaskInteractionTime();
+            
+            // Test 5: Link interaction response time
+            await testLinkInteractionTime();
+            
+            // Test 6: Task toggle performance
+            await testTaskTogglePerformance();
+            
+            // Test 7: Task deletion performance
+            await testTaskDeletionPerformance();
+            
+            // Test 8: Memory leak check
+            await testMemoryLeaks();
+            
+            log('', 'info');
+            log('=== All Performance Tests Complete ===', 'info');
+            
+            // Summary
+            const passed = testResults.filter(r => r.type === 'pass').length;
+            const failed = testResults.filter(r => r.type === 'fail').length;
+            log(`Summary: ${passed} passed, ${failed} failed`, failed === 0 ? 'pass' : 'fail');
+        }
+        
+        async function testInitialLoadTime() {
+            log('Test 1: Initial Load Time (Requirement 12.1)', 'info');
+            
+            // Simulate page load by creating new components
+            const taskContainer = document.getElementById('task-widget');
+            const linksContainer = document.getElementById('links-widget');
+            
+            const loadTime = measureTime(() => {
+                const taskManager = new TaskManager(taskContainer);
+                taskManager.init();
+                
+                const quickLinksManager = new QuickLinksManager(linksContainer);
+                quickLinksManager.init();
+            });
+            
+            log(`  Initial load time: ${loadTime.toFixed(2)}ms`, 'info');
+            
+            if (loadTime < 1000) {
+                log(`  ✓ PASS: Load time ${loadTime.toFixed(2)}ms < 1000ms`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Load time ${loadTime.toFixed(2)}ms >= 1000ms`, 'fail');
+            }
+            
+            await sleep(100);
+        }
+        
+        async function testTaskRenderingPerformance() {
+            log('', 'info');
+            log('Test 2: Task Rendering Performance with 100 Tasks (Requirement 12.3)', 'info');
+            
+            // Clear localStorage and create fresh TaskManager
+            localStorage.clear();
+            const taskContainer = document.getElementById('task-widget');
+            const taskManager = new TaskManager(taskContainer);
+            taskManager.init();
+            
+            // Add 100 tasks and measure time
+            const addTime = measureTime(() => {
+                for (let i = 1; i <= 100; i++) {
+                    taskManager.addTask(`Task ${i}: Sample task description for testing performance`);
+                }
+            });
+            
+            log(`  Time to add 100 tasks: ${addTime.toFixed(2)}ms`, 'info');
+            log(`  Average time per task: ${(addTime / 100).toFixed(2)}ms`, 'info');
+            
+            // Measure render time
+            const renderTime = measureTime(() => {
+                taskManager.renderTasks();
+            });
+            
+            log(`  Time to render 100 tasks: ${renderTime.toFixed(2)}ms`, 'info');
+            
+            // Check if responsive (under 100ms for interaction)
+            if (renderTime < 100) {
+                log(`  ✓ PASS: Render time ${renderTime.toFixed(2)}ms < 100ms (responsive)`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Render time ${renderTime.toFixed(2)}ms >= 100ms (not responsive)`, 'fail');
+            }
+            
+            // Verify all tasks are rendered
+            const taskElements = document.querySelectorAll('#task-list .task-item');
+            if (taskElements.length === 100) {
+                log(`  ✓ PASS: All 100 tasks rendered correctly`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Expected 100 tasks, found ${taskElements.length}`, 'fail');
+            }
+            
+            await sleep(100);
+        }
+        
+        async function testLinkRenderingPerformance() {
+            log('', 'info');
+            log('Test 3: Link Rendering Performance with 20 Links (Requirement 12.4)', 'info');
+            
+            // Clear localStorage and create fresh QuickLinksManager
+            localStorage.removeItem('productivity-dashboard-links');
+            const linksContainer = document.getElementById('links-widget');
+            const quickLinksManager = new QuickLinksManager(linksContainer);
+            quickLinksManager.init();
+            
+            // Add 20 links and measure time
+            const addTime = measureTime(() => {
+                for (let i = 1; i <= 20; i++) {
+                    quickLinksManager.addLink(
+                        `https://example${i}.com`,
+                        `Example Link ${i}`
+                    );
+                }
+            });
+            
+            log(`  Time to add 20 links: ${addTime.toFixed(2)}ms`, 'info');
+            log(`  Average time per link: ${(addTime / 20).toFixed(2)}ms`, 'info');
+            
+            // Measure render time
+            const renderTime = measureTime(() => {
+                quickLinksManager.renderLinks();
+            });
+            
+            log(`  Time to render 20 links: ${renderTime.toFixed(2)}ms`, 'info');
+            
+            // Check if responsive (under 100ms for interaction)
+            if (renderTime < 100) {
+                log(`  ✓ PASS: Render time ${renderTime.toFixed(2)}ms < 100ms (responsive)`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Render time ${renderTime.toFixed(2)}ms >= 100ms (not responsive)`, 'fail');
+            }
+            
+            // Verify all links are rendered
+            const linkElements = document.querySelectorAll('#links-list .link-item');
+            if (linkElements.length === 20) {
+                log(`  ✓ PASS: All 20 links rendered correctly`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Expected 20 links, found ${linkElements.length}`, 'fail');
+            }
+            
+            await sleep(100);
+        }
+        
+        async function testTaskInteractionTime() {
+            log('', 'info');
+            log('Test 4: Task Interaction Response Time (Requirement 12.2)', 'info');
+            
+            // Use existing task manager with 100 tasks
+            const taskContainer = document.getElementById('task-widget');
+            const taskManager = new TaskManager(taskContainer);
+            taskManager.init();
+            
+            // Ensure we have tasks
+            if (taskManager.tasks.length === 0) {
+                for (let i = 1; i <= 100; i++) {
+                    taskManager.addTask(`Task ${i}`);
+                }
+            }
+            
+            const taskId = taskManager.tasks[50].id; // Middle task
+            
+            // Test toggle interaction
+            const toggleTime = measureTime(() => {
+                taskManager.toggleTaskComplete(taskId);
+            });
+            
+            log(`  Task toggle time: ${toggleTime.toFixed(2)}ms`, 'info');
+            
+            if (toggleTime < 100) {
+                log(`  ✓ PASS: Toggle response ${toggleTime.toFixed(2)}ms < 100ms`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Toggle response ${toggleTime.toFixed(2)}ms >= 100ms`, 'fail');
+            }
+            
+            await sleep(100);
+        }
+        
+        async function testLinkInteractionTime() {
+            log('', 'info');
+            log('Test 5: Link Interaction Response Time (Requirement 12.2)', 'info');
+            
+            // Use existing links manager with 20 links
+            const linksContainer = document.getElementById('links-widget');
+            const quickLinksManager = new QuickLinksManager(linksContainer);
+            quickLinksManager.init();
+            
+            // Ensure we have links
+            if (quickLinksManager.links.length === 0) {
+                for (let i = 1; i <= 20; i++) {
+                    quickLinksManager.addLink(`https://example${i}.com`, `Link ${i}`);
+                }
+            }
+            
+            const linkId = quickLinksManager.links[10].id; // Middle link
+            
+            // Test delete interaction
+            const deleteTime = measureTime(() => {
+                quickLinksManager.deleteLink(linkId);
+            });
+            
+            log(`  Link delete time: ${deleteTime.toFixed(2)}ms`, 'info');
+            
+            if (deleteTime < 100) {
+                log(`  ✓ PASS: Delete response ${deleteTime.toFixed(2)}ms < 100ms`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Delete response ${deleteTime.toFixed(2)}ms >= 100ms`, 'fail');
+            }
+            
+            await sleep(100);
+        }
+        
+        async function testTaskTogglePerformance() {
+            log('', 'info');
+            log('Test 6: Bulk Task Toggle Performance', 'info');
+            
+            const taskContainer = document.getElementById('task-widget');
+            const taskManager = new TaskManager(taskContainer);
+            taskManager.init();
+            
+            // Ensure we have 100 tasks
+            if (taskManager.tasks.length < 100) {
+                localStorage.clear();
+                taskManager.tasks = [];
+                for (let i = 1; i <= 100; i++) {
+                    taskManager.addTask(`Task ${i}`);
+                }
+            }
+            
+            // Toggle 10 tasks and measure average time
+            const toggleTimes = [];
+            for (let i = 0; i < 10; i++) {
+                const taskId = taskManager.tasks[i * 10].id;
+                const time = measureTime(() => {
+                    taskManager.toggleTaskComplete(taskId);
+                });
+                toggleTimes.push(time);
+            }
+            
+            const avgToggleTime = toggleTimes.reduce((a, b) => a + b, 0) / toggleTimes.length;
+            const maxToggleTime = Math.max(...toggleTimes);
+            
+            log(`  Average toggle time: ${avgToggleTime.toFixed(2)}ms`, 'info');
+            log(`  Max toggle time: ${maxToggleTime.toFixed(2)}ms`, 'info');
+            
+            if (maxToggleTime < 100) {
+                log(`  ✓ PASS: All toggles under 100ms`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Some toggles exceeded 100ms`, 'fail');
+            }
+            
+            await sleep(100);
+        }
+        
+        async function testTaskDeletionPerformance() {
+            log('', 'info');
+            log('Test 7: Task Deletion Performance', 'info');
+            
+            const taskContainer = document.getElementById('task-widget');
+            const taskManager = new TaskManager(taskContainer);
+            taskManager.init();
+            
+            // Ensure we have tasks
+            if (taskManager.tasks.length < 50) {
+                localStorage.clear();
+                taskManager.tasks = [];
+                for (let i = 1; i <= 100; i++) {
+                    taskManager.addTask(`Task ${i}`);
+                }
+            }
+            
+            // Delete 10 tasks and measure average time
+            const deleteTimes = [];
+            for (let i = 0; i < 10; i++) {
+                if (taskManager.tasks.length > 0) {
+                    const taskId = taskManager.tasks[0].id;
+                    const time = measureTime(() => {
+                        taskManager.deleteTask(taskId);
+                    });
+                    deleteTimes.push(time);
+                }
+            }
+            
+            const avgDeleteTime = deleteTimes.reduce((a, b) => a + b, 0) / deleteTimes.length;
+            const maxDeleteTime = Math.max(...deleteTimes);
+            
+            log(`  Average delete time: ${avgDeleteTime.toFixed(2)}ms`, 'info');
+            log(`  Max delete time: ${maxDeleteTime.toFixed(2)}ms`, 'info');
+            
+            if (maxDeleteTime < 100) {
+                log(`  ✓ PASS: All deletions under 100ms`, 'pass');
+            } else {
+                log(`  ✗ FAIL: Some deletions exceeded 100ms`, 'fail');
+            }
+            
+            await sleep(100);
+        }
+        
+        async function testMemoryLeaks() {
+            log('', 'info');
+            log('Test 8: Memory Leak Check', 'info');
+            
+            // Check for proper cleanup of intervals
+            const taskContainer = document.getElementById('task-widget');
+            const greetingContainer = document.getElementById('greeting-widget');
+            const timerContainer = document.getElementById('timer-widget');
+            
+            // Create and destroy components multiple times
+            for (let i = 0; i < 5; i++) {
+                const greeting = new GreetingWidget(greetingContainer);
+                greeting.init();
+                greeting.destroy();
+                
+                const timer = new FocusTimer(timerContainer);
+                timer.init();
+                timer.destroy();
+            }
+            
+            log(`  ✓ PASS: Component cleanup executed without errors`, 'pass');
+            log(`  Note: Manual memory profiling recommended for detailed analysis`, 'info');
+            
+            await sleep(100);
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>

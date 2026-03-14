@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Test - All Components</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-banner {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .test-banner h2 {
+            margin: 0;
+            color: #856404;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .console-output .log { color: #4ec9b0; }
+        .console-output .error { color: #f48771; }
+        .console-output .warn { color: #dcdcaa; }
+        .console-output .success { color: #4ec9b0; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="test-banner">
+        <h2>🔍 Integration Test - All Components Working Together</h2>
+        <p>This page tests all four components in their actual application context</p>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Productivity Dashboard</h1>
+        </header>
+        
+        <main class="dashboard-main">
+            <!-- Greeting Widget -->
+            <section class="widget greeting-widget" id="greeting-widget">
+                <div class="greeting-content">
+                    <div class="time-display" id="time-display">--:-- --</div>
+                    <div class="date-display" id="date-display">Loading...</div>
+                    <div class="greeting-message" id="greeting-message">Welcome</div>
+                </div>
+            </section>
+
+            <!-- Focus Timer Widget -->
+            <section class="widget timer-widget" id="timer-widget">
+                <h2>Focus Timer</h2>
+                <div class="timer-display" id="timer-display">25:00</div>
+                <div class="timer-controls">
+                    <button id="timer-start" class="btn btn-primary">Start</button>
+                    <button id="timer-stop" class="btn btn-secondary">Stop</button>
+                    <button id="timer-reset" class="btn btn-secondary">Reset</button>
+                </div>
+                <div class="timer-status" id="timer-status"></div>
+            </section>
+
+            <!-- Task Manager Widget -->
+            <section class="widget task-widget" id="task-widget">
+                <h2>Tasks</h2>
+                <div class="task-input-container">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="200">
+                    <button id="add-task-btn" class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-list" id="task-list">
+                    <!-- Tasks will be dynamically inserted here -->
+                </div>
+            </section>
+
+            <!-- Quick Links Widget -->
+            <section class="widget links-widget" id="links-widget">
+                <h2>Quick Links</h2>
+                <div class="link-input-container">
+                    <input type="url" id="link-url-input" placeholder="Enter URL..." maxlength="500">
+                    <input type="text" id="link-name-input" placeholder="Display name..." maxlength="50">
+                    <button id="add-link-btn" class="btn btn-primary">Add</button>
+                </div>
+                <div class="links-list" id="links-list">
+                    <!-- Links will be dynamically inserted here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="console-output" id="console-output">
+            <div class="log">Console Output:</div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Capture console logs
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addConsoleMessage(type, ...args) {
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${type.toUpperCase()}] ${message}`;
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addConsoleMessage('log', ...args);
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addConsoleMessage('error', ...args);
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addConsoleMessage('warn', ...args);
+        };
+
+        // Run integration tests
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('=== INTEGRATION TEST STARTED ===');
+            
+            setTimeout(() => {
+                runIntegrationTests();
+            }, 500);
+        });
+
+        function runIntegrationTests() {
+            let allPassed = true;
+            
+            try {
+                // Test 1: Check all components initialized
+                console.log('Test 1: Checking component initialization...');
+                
+                const greetingWidget = document.getElementById('greeting-widget');
+                const timerWidget = document.getElementById('timer-widget');
+                const taskWidget = document.getElementById('task-widget');
+                const linksWidget = document.getElementById('links-widget');
+                
+                if (!greetingWidget || !timerWidget || !taskWidget || !linksWidget) {
+                    console.error('FAIL: Not all component containers found');
+                    allPassed = false;
+                } else {
+                    console.log('✓ All component containers present');
+                }
+                
+                // Test 2: Check greeting widget displays
+                console.log('Test 2: Checking Greeting Widget...');
+                const timeDisplay = document.getElementById('time-display').textContent;
+                const dateDisplay = document.getElementById('date-display').textContent;
+                const greetingDisplay = document.getElementById('greeting-message').textContent;
+                
+                if (timeDisplay.includes(':') && (timeDisplay.includes('AM') || timeDisplay.includes('PM'))) {
+                    console.log(`✓ Time display working: ${timeDisplay}`);
+                } else {
+                    console.error(`FAIL: Time display incorrect: ${timeDisplay}`);
+                    allPassed = false;
+                }
+                
+                if (dateDisplay !== 'Loading...' && dateDisplay.includes(',')) {
+                    console.log(`✓ Date display working: ${dateDisplay}`);
+                } else {
+                    console.error(`FAIL: Date display incorrect: ${dateDisplay}`);
+                    allPassed = false;
+                }
+                
+                const validGreetings = ['Good Morning', 'Good Afternoon', 'Good Evening', 'Good Night'];
+                if (validGreetings.includes(greetingDisplay)) {
+                    console.log(`✓ Greeting display working: ${greetingDisplay}`);
+                } else {
+                    console.error(`FAIL: Greeting display incorrect: ${greetingDisplay}`);
+                    allPassed = false;
+                }
+                
+                // Test 3: Check timer widget
+                console.log('Test 3: Checking Focus Timer...');
+                const timerDisplay = document.getElementById('timer-display').textContent;
+                const startBtn = document.getElementById('timer-start');
+                const stopBtn = document.getElementById('timer-stop');
+                const resetBtn = document.getElementById('timer-reset');
+                
+                if (timerDisplay === '25:00') {
+                    console.log('✓ Timer display initialized correctly');
+                } else {
+                    console.error(`FAIL: Timer display incorrect: ${timerDisplay}`);
+                    allPassed = false;
+                }
+                
+                if (startBtn && stopBtn && resetBtn) {
+                    console.log('✓ Timer controls present');
+                } else {
+                    console.error('FAIL: Timer controls missing');
+                    allPassed = false;
+                }
+                
+                // Test 4: Check task manager
+                console.log('Test 4: Checking Task Manager...');
+                const taskInput = document.getElementById('task-input');
+                const addTaskBtn = document.getElementById('add-task-btn');
+                const taskList = document.getElementById('task-list');
+                
+                if (taskInput && addTaskBtn && taskList) {
+                    console.log('✓ Task Manager UI elements present');
+                } else {
+                    console.error('FAIL: Task Manager UI elements missing');
+                    allPassed = false;
+                }
+                
+                // Test 5: Check quick links
+                console.log('Test 5: Checking Quick Links Manager...');
+                const linkUrlInput = document.getElementById('link-url-input');
+                const linkNameInput = document.getElementById('link-name-input');
+                const addLinkBtn = document.getElementById('add-link-btn');
+                const linksList = document.getElementById('links-list');
+                
+                if (linkUrlInput && linkNameInput && addLinkBtn && linksList) {
+                    console.log('✓ Quick Links Manager UI elements present');
+                } else {
+                    console.error('FAIL: Quick Links Manager UI elements missing');
+                    allPassed = false;
+                }
+                
+                // Test 6: Test component independence - add data to each
+                console.log('Test 6: Testing component independence...');
+                
+                // Add a task
+                taskInput.value = 'Test task for independence';
+                addTaskBtn.click();
+                
+                setTimeout(() => {
+                    const taskItems = taskList.querySelectorAll('.task-item');
+                    if (taskItems.length > 0) {
+                        console.log('✓ Task Manager can add tasks independently');
+                    } else {
+                        console.error('FAIL: Task Manager failed to add task');
+                        allPassed = false;
+                    }
+                    
+                    // Add a link
+                    linkUrlInput.value = 'https://example.com';
+                    linkNameInput.value = 'Test Link';
+                    addLinkBtn.click();
+                    
+                    setTimeout(() => {
+                        const linkItems = linksList.querySelectorAll('.link-item');
+                        if (linkItems.length > 0) {
+                            console.log('✓ Quick Links Manager can add links independently');
+                        } else {
+                            console.error('FAIL: Quick Links Manager failed to add link');
+                            allPassed = false;
+                        }
+                        
+                        // Test timer independently
+                        startBtn.click();
+                        setTimeout(() => {
+                            const timerStatus = document.getElementById('timer-status').textContent;
+                            if (timerStatus.includes('running')) {
+                                console.log('✓ Focus Timer can start independently');
+                                stopBtn.click();
+                            } else {
+                                console.error('FAIL: Focus Timer failed to start');
+                                allPassed = false;
+                            }
+                            
+                            // Final summary
+                            console.log('=== INTEGRATION TEST COMPLETED ===');
+                            if (allPassed) {
+                                const successDiv = document.createElement('div');
+                                successDiv.className = 'success';
+                                successDiv.textContent = '✓✓✓ ALL INTEGRATION TESTS PASSED! All components work independently. ✓✓✓';
+                                consoleOutput.appendChild(successDiv);
+                            } else {
+                                const failDiv = document.createElement('div');
+                                failDiv.className = 'error';
+                                failDiv.textContent = '✗✗✗ SOME INTEGRATION TESTS FAILED. Check console for details. ✗✗✗';
+                                consoleOutput.appendChild(failDiv);
+                            }
+                        }, 1000);
+                    }, 500);
+                }, 500);
+                
+            } catch (error) {
+                console.error('EXCEPTION during integration test:', error.message);
+                console.error(error.stack);
+                allPassed = false;
+            }
+        }
+    </script>
+</body>
+</html>

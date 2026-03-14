@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Test - Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Test overlay to show viewport boundaries */
+        .viewport-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewport-info">
+        Viewport: <span id="viewport-size"></span><br>
+        Scroll: <span id="scroll-info"></span>
+    </div>
+    
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Productivity Dashboard</h1>
+        </header>
+        
+        <main class="dashboard-main">
+            <!-- Greeting Widget -->
+            <section class="widget greeting-widget">
+                <div class="greeting-content">
+                    <div class="time-display">10:30 AM</div>
+                    <div class="date-display">Monday, January 15</div>
+                    <div class="greeting-message">Good Morning</div>
+                </div>
+            </section>
+
+            <!-- Focus Timer Widget -->
+            <section class="widget timer-widget">
+                <h2>Focus Timer</h2>
+                <div class="timer-display">25:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-primary">Start</button>
+                    <button class="btn btn-secondary">Stop</button>
+                    <button class="btn btn-secondary">Reset</button>
+                </div>
+                <div class="timer-status">Ready to focus</div>
+            </section>
+
+            <!-- Task Manager Widget -->
+            <section class="widget task-widget">
+                <h2>Tasks</h2>
+                <div class="task-input-container">
+                    <input type="text" placeholder="Add a new task..." maxlength="200">
+                    <button class="btn btn-primary">Add</button>
+                </div>
+                <div class="task-list">
+                    <div class="task-item">
+                        <input type="checkbox" class="task-checkbox">
+                        <span class="task-text">Complete project documentation</span>
+                        <div class="task-actions">
+                            <button class="btn btn-edit">Edit</button>
+                            <button class="btn btn-danger">Delete</button>
+                        </div>
+                    </div>
+                    <div class="task-item completed">
+                        <input type="checkbox" class="task-checkbox" checked>
+                        <span class="task-text">Review code changes</span>
+                        <div class="task-actions">
+                            <button class="btn btn-edit">Edit</button>
+                            <button class="btn btn-danger">Delete</button>
+                        </div>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" class="task-checkbox">
+                        <span class="task-text">Update dependencies</span>
+                        <div class="task-actions">
+                            <button class="btn btn-edit">Edit</button>
+                            <button class="btn btn-danger">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Links Widget -->
+            <section class="widget links-widget">
+                <h2>Quick Links</h2>
+                <div class="link-input-container">
+                    <input type="url" placeholder="Enter URL..." maxlength="500">
+                    <input type="text" placeholder="Display name..." maxlength="50">
+                    <button class="btn btn-primary">Add</button>
+                </div>
+                <div class="links-list">
+                    <div class="link-item">
+                        <a href="#" class="btn-link">GitHub</a>
+                        <button class="link-delete">×</button>
+                    </div>
+                    <div class="link-item">
+                        <a href="#" class="btn-link">Documentation</a>
+                        <button class="link-delete">×</button>
+                    </div>
+                    <div class="link-item">
+                        <a href="#" class="btn-link">Project Board</a>
+                        <button class="link-delete">×</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Display viewport info
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const scrollY = window.scrollY;
+            const scrollX = window.scrollX;
+            
+            document.getElementById('viewport-size').textContent = `${width}x${height}`;
+            document.getElementById('scroll-info').textContent = 
+                scrollY > 0 || scrollX > 0 ? `X:${scrollX} Y:${scrollY}` : 'None (✓)';
+        }
+        
+        updateViewportInfo();
+        window.addEventListener('resize', updateViewportInfo);
+        window.addEventListener('scroll', updateViewportInfo);
+    </script>
+</body>
+</html>

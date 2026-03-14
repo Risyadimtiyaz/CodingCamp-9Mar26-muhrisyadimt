@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Completion Toggle Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .pass { color: green; }
+    .fail { color: red; }
+    h2 { color: #333; }
+    pre { background: #f5f5f5; padding: 10px; border-radius: 3px; }
+    .task-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: #f8f9fa;
+    }
+    .task-item.completed {
+      opacity: 0.6;
+      text-decoration: line-through;
+    }
+    .task-checkbox {
+      margin-right: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Task Completion Toggle Test Suite</h1>
+  <p>Testing Requirements 6.1, 6.2, 6.3, 6.4</p>
+  <div id="test-results"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Test utilities
+    function assert(condition, message) {
+      if (condition) {
+        return `<div class="pass">✓ ${message}</div>`;
+      } else {
+        return `<div class="fail">✗ ${message}</div>`;
+      }
+    }
+
+    function runTests() {
+      const results = [];
+      
+      // Clear localStorage before tests
+      localStorage.clear();
+
+      // Test 1: Toggle Task to Complete (Requirement 6.1)
+      results.push('<div class="test-section"><h2>Test 1: Toggle Task to Complete (Req 6.1)</h2>');
+      const container1 = document.createElement('div');
+      const manager1 = new TaskManager(container1);
+      const taskId1 = manager1.addTask('Test task for completion');
+      
+      results.push(assert(manager1.tasks[0].completed === false, 'Task starts as incomplete'));
+      
+      const toggleSuccess1 = manager1.toggleTaskComplete(taskId1);
+      results.push(assert(toggleSuccess1 === true, 'toggleTaskComplete returns true'));
+      results.push(assert(manager1.tasks[0].completed === true, 'Task completion status updated to true'));
+      results.push('</div>');
+
+      // Test 2: Save Completion Status to Local Storage (Requirement 6.2)
+      results.push('<div class="test-section"><h2>Test 2: Save to Local Storage (Req 6.2)</h2>');
+      const savedData = LocalStorageService.load('productivity-dashboard-tasks');
+      results.push(assert(savedData !== null, 'Data saved to Local Storage'));
+      results.push(assert(savedData[0].completed === true, 'Completion status saved correctly'));
+      
+      // Create new manager and verify persistence
+      const manager2 = new TaskManager(document.createElement('div'));
+      manager2.loadTasks();
+      results.push(assert(manager2.tasks.length === 1, 'Task loaded from storage'));
+      results.push(assert(manager2.tasks[0].completed === true, 'Completion status persisted'));
+      results.push('</div>');
+
+      // Test 3: Visual Styling for Completed Tasks (Requirement 6.3)
+      results.push('<div class="test-section"><h2>Test 3: Visual Styling (Req 6.3)</h2>');
+      const container3 = document.createElement('div');
+      container3.innerHTML = '<ul id="task-list"></ul>';
+      const manager3 = new TaskManager(container3);
+      manager3.taskList = container3.querySelector('#task-list');
+      
+      const taskId3 = manager3.addTask('Visual test task');
+      manager3.renderTasks();
+      
+      let taskElement = container3.querySelector('.task-item');
+      results.push(assert(!taskElement.classList.contains('completed'), 'Incomplete task does not have completed class'));
+      
+      manager3.toggleTaskComplete(taskId3);
+      taskElement = container3.querySelector('.task-item');
+      results.push(assert(taskElement.classList.contains('completed'), 'Completed task has completed class'));
+      
+      const checkbox = taskElement.querySelector('.task-checkbox');
+      results.push(assert(checkbox.checked === true, 'Checkbox is checked for completed task'));
+      results.push('</div>');
+
+      // Test 4: Toggle Completed Task to Incomplete (Requirement 6.4)
+      results.push('<div class="test-section"><h2>Test 4: Toggle to Incomplete (Req 6.4)</h2>');
+      const container4 = document.createElement('div');
+      const manager4 = new TaskManager(container4);
+      const taskId4 = manager4.addTask('Toggle back test');
+      
+      // First toggle to complete
+      manager4.toggleTaskComplete(taskId4);
+      results.push(assert(manager4.tasks[0].completed === true, 'Task marked complete'));
+      
+      // Toggle back to incomplete
+      const toggleSuccess4 = manager4.toggleTaskComplete(taskId4);
+      results.push(assert(toggleSuccess4 === true, 'Toggle back returns true'));
+      results.push(assert(manager4.tasks[0].completed === false, 'Task completion status updated to false'));
+      
+      // Verify persistence
+      const savedData4 = LocalStorageService.load('productivity-dashboard-tasks');
+      results.push(assert(savedData4[0].completed === false, 'Incomplete status saved to storage'));
+      results.push('</div>');
+
+      // Test 5: Multiple Toggle Operations
+      results.push('<div class="test-section"><h2>Test 5: Multiple Toggle Operations</h2>');
+      const container5 = document.createElement('div');
+      const manager5 = new TaskManager(container5);
+      const taskId5 = manager5.addTask('Multiple toggle test');
+      
+      for (let i = 0; i < 5; i++) {
+        manager5.toggleTaskComplete(taskId5);
+      }
+      results.push(assert(manager5.tasks[0].completed === true, 'Task is complete after odd number of toggles'));
+      
+      manager5.toggleTaskComplete(taskId5);
+      results.push(assert(manager5.tasks[0].completed === false, 'Task is incomplete after even number of toggles'));
+      results.push('</div>');
+
+      // Test 6: Toggle Non-Existent Task
+      results.push('<div class="test-section"><h2>Test 6: Toggle Non-Existent Task</h2>');
+      const container6 = document.createElement('div');
+      const manager6 = new TaskManager(container6);
+      const toggleFail = manager6.toggleTaskComplete('non-existent-id');
+      results.push(assert(toggleFail === false, 'Toggle non-existent task returns false'));
+      results.push('</div>');
+
+      // Test 7: Checkbox Event Listener
+      results.push('<div class="test-section"><h2>Test 7: Checkbox Event Listener</h2>');
+      const container7 = document.createElement('div');
+      container7.innerHTML = '<ul id="task-list"></ul>';
+      const manager7 = new TaskManager(container7);
+      manager7.taskList = container7.querySelector('#task-list');
+      
+      const taskId7 = manager7.addTask('Checkbox test');
+      manager7.renderTasks();
+      
+      const checkbox7 = container7.querySelector('.task-checkbox');
+      results.push(assert(checkbox7 !== null, 'Checkbox element exists'));
+      results.push(assert(checkbox7.checked === false, 'Checkbox starts unchecked'));
+      
+      // Simulate checkbox click
+      checkbox7.click();
+      results.push(assert(manager7.tasks[0].completed === true, 'Clicking checkbox toggles task completion'));
+      results.push('</div>');
+
+      // Display results
+      document.getElementById('test-results').innerHTML = results.join('');
+    }
+
+    // Run tests when page loads
+    runTests();
+  </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Productivity Dashboard</h1>
+        </header>
+        
+        <main class="dashboard-main" role="main">
+            <!-- Greeting Widget -->
+            <section class="widget greeting-widget" id="greeting-widget" aria-label="Time and greeting display">
+                <div class="greeting-content">
+                    <div class="time-display" id="time-display" role="timer" aria-live="polite" aria-atomic="true">--:-- --</div>
+                    <div class="date-display" id="date-display" aria-live="polite">Loading...</div>
+                    <div class="greeting-message" id="greeting-message" aria-live="polite">Welcome</div>
+                </div>
+            </section>
+
+            <!-- Focus Timer Widget -->
+            <section class="widget timer-widget" id="timer-widget" aria-label="Focus timer">
+                <h2>Focus Timer</h2>
+                <div class="timer-display" id="timer-display" role="timer" aria-live="polite" aria-atomic="true">25:00</div>
+                <div class="timer-controls" role="group" aria-label="Timer controls">
+                    <button id="timer-start" class="btn btn-primary" aria-label="Start timer">Start</button>
+                    <button id="timer-stop" class="btn btn-secondary" aria-label="Stop timer">Stop</button>
+                    <button id="timer-reset" class="btn btn-secondary" aria-label="Reset timer">Reset</button>
+                </div>
+                <div class="timer-status" id="timer-status" role="status" aria-live="polite"></div>
+            </section>
+
+            <!-- Task Manager Widget -->
+            <section class="widget task-widget" id="task-widget" aria-label="Task manager">
+                <h2>Tasks</h2>
+                <div class="task-input-container" role="group" aria-label="Add new task">
+                    <input type="text" id="task-input" placeholder="Add a new task..." maxlength="200" aria-label="New task text">
+                    <button id="add-task-btn" class="btn btn-primary" aria-label="Add task">Add</button>
+                </div>
+                <div class="task-list" id="task-list" role="list" aria-label="Task list">
+                    <!-- Tasks will be dynamically inserted here -->
+                </div>
+            </section>
+
+            <!-- Quick Links Widget -->
+            <section class="widget links-widget" id="links-widget" aria-label="Quick links">
+                <h2>Quick Links</h2>
+                <div class="link-input-container" role="group" aria-label="Add new link">
+                    <input type="url" id="link-url-input" placeholder="Enter URL..." maxlength="500" aria-label="Link URL">
+                    <input type="text" id="link-name-input" placeholder="Display name..." maxlength="50" aria-label="Link display name">
+                    <button id="add-link-btn" class="btn btn-primary" aria-label="Add link">Add</button>
+                </div>
+                <div class="links-list" id="links-list" role="list" aria-label="Quick links list">
+                    <!-- Links will be dynamically inserted here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

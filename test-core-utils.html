@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Utils Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Core Utilities Test</h1>
+    <div id="test-results"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+
+        function addResult(testName, passed, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${passed ? '✓' : '✗'} ${testName}: ${message}`;
+            results.appendChild(div);
+        }
+
+        // Test LocalStorageService
+        results.innerHTML += '<h2>LocalStorageService Tests</h2>';
+
+        // Test save and load
+        const testData = { tasks: ['task1', 'task2'], count: 2 };
+        const saveResult = LocalStorageService.save('test-key', testData);
+        addResult('Save data', saveResult, 'Data saved successfully');
+
+        const loadedData = LocalStorageService.load('test-key');
+        const loadMatch = JSON.stringify(loadedData) === JSON.stringify(testData);
+        addResult('Load data', loadMatch, `Loaded: ${JSON.stringify(loadedData)}`);
+
+        // Test load non-existent key
+        const nonExistent = LocalStorageService.load('non-existent-key');
+        addResult('Load non-existent', nonExistent === null, `Result: ${nonExistent}`);
+
+        // Test remove
+        const removeResult = LocalStorageService.remove('test-key');
+        const afterRemove = LocalStorageService.load('test-key');
+        addResult('Remove data', removeResult && afterRemove === null, 'Data removed successfully');
+
+        // Test TimeUtils
+        results.innerHTML += '<h2>TimeUtils Tests</h2>';
+
+        // Test formatTime12Hour
+        const testDate = new Date(2024, 0, 15, 14, 30); // Jan 15, 2024, 2:30 PM
+        const timeStr = TimeUtils.formatTime12Hour(testDate);
+        const hasAMPM = timeStr.includes('AM') || timeStr.includes('PM');
+        addResult('Format time 12-hour', hasAMPM, `Result: ${timeStr}`);
+
+        // Test formatDate
+        const dateStr = TimeUtils.formatDate(testDate);
+        const hasWeekday = dateStr.includes('Monday');
+        const hasMonth = dateStr.includes('January');
+        const hasDay = dateStr.includes('15');
+        addResult('Format date', hasWeekday && hasMonth && hasDay, `Result: ${dateStr}`);
+
+        // Test getTimeBasedGreeting
+        const morningDate = new Date(2024, 0, 15, 9, 0); // 9:00 AM
+        const afternoonDate = new Date(2024, 0, 15, 14, 0); // 2:00 PM
+        const eveningDate = new Date(2024, 0, 15, 19, 0); // 7:00 PM
+        const nightDate = new Date(2024, 0, 15, 22, 0); // 10:00 PM
+
+        const morningGreeting = TimeUtils.getTimeBasedGreeting(morningDate);
+        const afternoonGreeting = TimeUtils.getTimeBasedGreeting(afternoonDate);
+        const eveningGreeting = TimeUtils.getTimeBasedGreeting(eveningDate);
+        const nightGreeting = TimeUtils.getTimeBasedGreeting(nightDate);
+
+        addResult('Morning greeting', morningGreeting === 'Good Morning', `Result: ${morningGreeting}`);
+        addResult('Afternoon greeting', afternoonGreeting === 'Good Afternoon', `Result: ${afternoonGreeting}`);
+        addResult('Evening greeting', eveningGreeting === 'Good Evening', `Result: ${eveningGreeting}`);
+        addResult('Night greeting', nightGreeting === 'Good Night', `Result: ${nightGreeting}`);
+
+        // Test current time
+        const currentTime = TimeUtils.getCurrentTime();
+        addResult('Get current time', currentTime instanceof Date, `Result: ${currentTime}`);
+
+        results.innerHTML += '<h2>Summary</h2>';
+        const allTests = document.querySelectorAll('.test-result');
+        const passedTests = document.querySelectorAll('.test-result.pass');
+        results.innerHTML += `<p><strong>Total: ${allTests.length} tests, Passed: ${passedTests.length}, Failed: ${allTests.length - passedTests.length}</strong></p>`;
+    </script>
+</body>
+</html>

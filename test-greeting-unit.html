@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting Widget Unit Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f7fa;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .pass {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .summary {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Greeting Widget Unit Tests</h1>
+    
+    <div class="test-section">
+        <h2>About Unit Testing</h2>
+        <p>Unit tests verify specific examples and edge cases with predetermined inputs and expected outputs.</p>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+        let testCount = 0;
+        let passCount = 0;
+
+        function addSection(title) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = `<h2>${title}</h2>`;
+            results.appendChild(section);
+        }
+
+        function addResult(testName, passed, message, details = '') {
+            testCount++;
+            if (passed) passCount++;
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${passed ? '✓' : '✗'} ${testName}</strong><br>
+                ${message}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            results.appendChild(div);
+        }
+
+        // Create a test widget instance
+        const widget = new GreetingWidget(document.createElement('div'));
+
+        // ====================================================================
+        // Time Formatting Tests
+        // ====================================================================
+        addSection('Time Formatting Tests (Requirement 1.1)');
+
+        // Test morning time
+        const morning = new Date(2024, 0, 15, 9, 30);
+        const morningTime = widget.formatTime(morning);
+        addResult(
+            'Format morning time (9:30 AM)',
+            morningTime.includes('9:30') && morningTime.includes('AM'),
+            `Result: "${morningTime}"`
+        );
+
+        // Test afternoon time
+        const afternoon = new Date(2024, 0, 15, 14, 45);
+        const afternoonTime = widget.formatTime(afternoon);
+        addResult(
+            'Format afternoon time (2:45 PM)',
+            afternoonTime.includes('2:45') && afternoonTime.includes('PM'),
+            `Result: "${afternoonTime}"`
+        );
+
+        // Test midnight
+        const midnight = new Date(2024, 0, 15, 0, 0);
+        const midnightTime = widget.formatTime(midnight);
+        addResult(
+            'Format midnight (12:00 AM)',
+            midnightTime.includes('12:00') && midnightTime.includes('AM'),
+            `Result: "${midnightTime}"`
+        );
+
+        // Test noon
+        const noon = new Date(2024, 0, 15, 12, 0);
+        const noonTime = widget.formatTime(noon);
+        addResult(
+            'Format noon (12:00 PM)',
+            noonTime.includes('12:00') && noonTime.includes('PM'),
+            `Result: "${noonTime}"`
+        );
+
+        // ====================================================================
+        // Date Formatting Tests
+        // ====================================================================
+        addSection('Date Formatting Tests (Requirement 1.2)');
+
+        // Test specific date
+        const testDate = new Date(2024, 0, 15); // Monday, January 15, 2024
+        const formattedDate = widget.formatDate(testDate);
+        addResult(
+            'Format date with weekday, month, and day',
+            formattedDate.includes('Monday') && formattedDate.includes('January') && formattedDate.includes('15'),
+            `Result: "${formattedDate}"`
+        );
+
+        // Test different months
+        const february = new Date(2024, 1, 14);
+        const febDate = widget.formatDate(february);
+        addResult(
+            'Format February date',
+            febDate.includes('February') && febDate.includes('14'),
+            `Result: "${febDate}"`
+        );
+
+        const december = new Date(2024, 11, 25);
+        const decDate = widget.formatDate(december);
+        addResult(
+            'Format December date',
+            decDate.includes('December') && decDate.includes('25'),
+            `Result: "${decDate}"`
+        );
+
+        // ====================================================================
+        // Greeting Tests
+        // ====================================================================
+        addSection('Time-Based Greeting Tests (Requirements 2.1-2.4)');
+
+        // Test Good Morning (5:00 AM - 11:59 AM)
+        const earlyMorning = new Date(2024, 0, 15, 5, 0);
+        addResult(
+            'Good Morning at 5:00 AM (boundary)',
+            widget.getTimeBasedGreeting(earlyMorning) === 'Good Morning',
+            `Result: "${widget.getTimeBasedGreeting(earlyMorning)}"`
+        );
+
+        const midMorning = new Date(2024, 0, 15, 9, 30);
+        addResult(
+            'Good Morning at 9:30 AM',
+            widget.getTimeBasedGreeting(midMorning) === 'Good Morning',
+            `Result: "${widget.getTimeBasedGreeting(midMorning)}"`
+        );
+
+        const lateMorning = new Date(2024, 0, 15, 11, 59);
+        addResult(
+            'Good Morning at 11:59 AM (boundary)',
+            widget.getTimeBasedGreeting(lateMorning) === 'Good Morning',
+            `Result: "${widget.getTimeBasedGreeting(lateMorning)}"`
+        );
+
+        // Test Good Afternoon (12:00 PM - 4:59 PM)
+        const earlyAfternoon = new Date(2024, 0, 15, 12, 0);
+        addResult(
+            'Good Afternoon at 12:00 PM (boundary)',
+            widget.getTimeBasedGreeting(earlyAfternoon) === 'Good Afternoon',
+            `Result: "${widget.getTimeBasedGreeting(earlyAfternoon)}"`
+        );
+
+        const midAfternoon = new Date(2024, 0, 15, 14, 30);
+        addResult(
+            'Good Afternoon at 2:30 PM',
+            widget.getTimeBasedGreeting(midAfternoon) === 'Good Afternoon',
+            `Result: "${widget.getTimeBasedGreeting(midAfternoon)}"`
+        );
+
+        const lateAfternoon = new Date(2024, 0, 15, 16, 59);
+        addResult(
+            'Good Afternoon at 4:59 PM (boundary)',
+            widget.getTimeBasedGreeting(lateAfternoon) === 'Good Afternoon',
+            `Result: "${widget.getTimeBasedGreeting(lateAfternoon)}"`
+        );
+
+        // Test Good Evening (5:00 PM - 8:59 PM)
+        const earlyEvening = new Date(2024, 0, 15, 17, 0);
+        addResult(
+            'Good Evening at 5:00 PM (boundary)',
+            widget.getTimeBasedGreeting(earlyEvening) === 'Good Evening',
+            `Result: "${widget.getTimeBasedGreeting(earlyEvening)}"`
+        );
+
+        const midEvening = new Date(2024, 0, 15, 19, 30);
+        addResult(
+            'Good Evening at 7:30 PM',
+            widget.getTimeBasedGreeting(midEvening) === 'Good Evening',
+            `Result: "${widget.getTimeBasedGreeting(midEvening)}"`
+        );
+
+        const lateEvening = new Date(2024, 0, 15, 20, 59);
+        addResult(
+            'Good Evening at 8:59 PM (boundary)',
+            widget.getTimeBasedGreeting(lateEvening) === 'Good Evening',
+            `Result: "${widget.getTimeBasedGreeting(lateEvening)}"`
+        );
+
+        // Test Good Night (9:00 PM - 4:59 AM)
+        const earlyNight = new Date(2024, 0, 15, 21, 0);
+        addResult(
+            'Good Night at 9:00 PM (boundary)',
+            widget.getTimeBasedGreeting(earlyNight) === 'Good Night',
+            `Result: "${widget.getTimeBasedGreeting(earlyNight)}"`
+        );
+
+        const midNight = new Date(2024, 0, 15, 23, 30);
+        addResult(
+            'Good Night at 11:30 PM',
+            widget.getTimeBasedGreeting(midNight) === 'Good Night',
+            `Result: "${widget.getTimeBasedGreeting(midNight)}"`
+        );
+
+        const afterMidnight = new Date(2024, 0, 15, 2, 0);
+        addResult(
+            'Good Night at 2:00 AM',
+            widget.getTimeBasedGreeting(afterMidnight) === 'Good Night',
+            `Result: "${widget.getTimeBasedGreeting(afterMidnight)}"`
+        );
+
+        const beforeMorning = new Date(2024, 0, 15, 4, 59);
+        addResult(
+            'Good Night at 4:59 AM (boundary)',
+            widget.getTimeBasedGreeting(beforeMorning) === 'Good Night',
+            `Result: "${widget.getTimeBasedGreeting(beforeMorning)}"`
+        );
+
+        // ====================================================================
+        // Widget Integration Tests
+        // ====================================================================
+        addSection('Widget Integration Tests');
+
+        // Test widget initialization
+        const container = document.createElement('div');
+        container.innerHTML = `
+            <div class="time-display" id="test-time-display">--:-- --</div>
+            <div class="date-display" id="test-date-display">Loading...</div>
+            <div class="greeting-message" id="test-greeting-message">Welcome</div>
+        `;
+        document.body.appendChild(container);
+
+        const testWidget = new GreetingWidget(container);
+        addResult(
+            'Widget instantiation',
+            testWidget instanceof GreetingWidget,
+            'GreetingWidget instance created successfully'
+        );
+
+        addResult(
+            'Widget has required methods',
+            typeof testWidget.init === 'function' &&
+            typeof testWidget.updateTime === 'function' &&
+            typeof testWidget.formatTime === 'function' &&
+            typeof testWidget.formatDate === 'function' &&
+            typeof testWidget.getTimeBasedGreeting === 'function',
+            'All required methods are present'
+        );
+
+        // Clean up
+        document.body.removeChild(container);
+
+        // ====================================================================
+        // Summary
+        // ====================================================================
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'summary';
+        summaryDiv.innerHTML = `
+            <div>Test Summary</div>
+            <div style="margin-top: 10px;">
+                Total Tests: ${testCount} | 
+                Passed: <span style="color: #28a745;">${passCount}</span> | 
+                Failed: <span style="color: #dc3545;">${testCount - passCount}</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9em;">
+                ${passCount === testCount 
+                    ? '🎉 All unit tests passed!' 
+                    : '⚠️ Some tests failed - review the results above'}
+            </div>
+        `;
+        results.appendChild(summaryDiv);
+    </script>
+</body>
+</html>

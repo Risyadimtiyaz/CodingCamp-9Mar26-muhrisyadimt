@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        .timer-display {
+            font-size: 2rem;
+            margin: 10px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Focus Timer Component Test</h1>
+    
+    <div class="test-section">
+        <h2>Manual Test</h2>
+        <div id="timer-widget">
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div>
+                <button id="timer-start">Start</button>
+                <button id="timer-stop">Stop</button>
+                <button id="timer-reset">Reset</button>
+            </div>
+            <div id="timer-status"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Automated Tests</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const results = document.getElementById('test-results');
+            
+            function addResult(testName, passed, message) {
+                const div = document.createElement('div');
+                div.className = passed ? 'pass' : 'fail';
+                div.textContent = `${passed ? '✓' : '✗'} ${testName}: ${message}`;
+                results.appendChild(div);
+            }
+
+            // Test 1: Timer initialization
+            const timerContainer = document.getElementById('timer-widget');
+            const timer = new FocusTimer(timerContainer);
+            timer.init();
+            
+            addResult('Initialization', 
+                timer.duration === 1500 && timer.remainingTime === 1500 && !timer.isRunning,
+                'Timer initialized with 1500 seconds (25 minutes)');
+
+            // Test 2: Display format
+            const displayText = document.getElementById('timer-display').textContent;
+            addResult('Display Format', 
+                displayText === '25:00',
+                `Display shows "${displayText}"`);
+
+            // Test 3: Start functionality
+            timer.start();
+            addResult('Start Function', 
+                timer.isRunning === true && timer.intervalId !== null,
+                'Timer starts and sets isRunning to true');
+
+            // Test 4: Stop functionality
+            setTimeout(() => {
+                const timeAfterStart = timer.remainingTime;
+                timer.stop();
+                addResult('Stop Function', 
+                    timer.isRunning === false && timer.remainingTime < 1500,
+                    `Timer stops and preserves remaining time (${timer.remainingTime}s)`);
+
+                // Test 5: Reset functionality
+                timer.reset();
+                addResult('Reset Function', 
+                    timer.remainingTime === 1500 && !timer.isRunning,
+                    'Timer resets to 1500 seconds');
+
+                // Test 6: Countdown behavior
+                timer.remainingTime = 3; // Set to 3 seconds for quick test
+                timer.start();
+                
+                setTimeout(() => {
+                    const timeCheck = timer.remainingTime < 3;
+                    addResult('Countdown Behavior', 
+                        timeCheck,
+                        `Timer counts down (now at ${timer.remainingTime}s)`);
+                    
+                    // Clean up
+                    timer.stop();
+                }, 1500);
+
+                // Test 7: Completion handling
+                timer.remainingTime = 1;
+                timer.start();
+                
+                setTimeout(() => {
+                    const statusText = document.getElementById('timer-status').textContent;
+                    addResult('Completion Handling', 
+                        timer.remainingTime === 0 && !timer.isRunning && statusText.includes('complete'),
+                        `Timer completes and shows notification: "${statusText}"`);
+                }, 1500);
+
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

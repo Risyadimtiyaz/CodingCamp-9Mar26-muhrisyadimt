@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Deletion Test - Productivity Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .pass {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .fail {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Link Deletion Test</h1>
+  <p class="info">Testing Requirement 9.4: WHEN a user deletes a Link, THE Quick_Links SHALL remove the Link from Local_Storage</p>
+
+  <div class="test-section">
+    <h2>Test Setup</h2>
+    <button onclick="runTests()">Run All Tests</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-results"></div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    const STORAGE_KEY = 'productivity-dashboard-links';
+    let testResults = [];
+
+    function clearStorage() {
+      localStorage.removeItem(STORAGE_KEY);
+      displayResults([{ name: 'Storage Cleared', passed: true, message: 'Local Storage has been cleared' }]);
+    }
+
+    function displayResults(results) {
+      const resultsDiv = document.getElementById('test-results');
+      resultsDiv.innerHTML = '';
+      
+      results.forEach(result => {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = `test-result ${result.passed ? 'pass' : 'fail'}`;
+        resultDiv.innerHTML = `
+          <strong>${result.passed ? '✓' : '✗'} ${result.name}</strong><br>
+          ${result.message}
+        `;
+        resultsDiv.appendChild(resultDiv);
+      });
+    }
+
+    function runTests() {
+      testResults = [];
+      
+      // Clear storage before tests
+      localStorage.removeItem(STORAGE_KEY);
+      
+      // Test 1: Delete link removes it from array
+      test1_DeleteRemovesFromArray();
+      
+      // Test 2: Delete link removes it from Local Storage
+      test2_DeleteRemovesFromStorage();
+      
+      // Test 3: Delete link updates UI
+      test3_DeleteUpdatesUI();
+      
+      // Test 4: Delete non-existent link returns false
+      test4_DeleteNonExistentLink();
+      
+      // Test 5: Multiple deletions work correctly
+      test5_MultipleDeletions();
+      
+      // Display all results
+      displayResults(testResults);
+    }
+
+    function test1_DeleteRemovesFromArray() {
+      const manager = new QuickLinksManager(document.createElement('div'));
+      manager.links = [];
+      
+      // Add a link
+      const linkId = manager.addLink('https://example.com', 'Example');
+      const initialCount = manager.links.length;
+      
+      // Delete the link
+      const result = manager.deleteLink(linkId);
+      const finalCount = manager.links.length;
+      
+      const passed = result === true && initialCount === 1 && finalCount === 0;
+      testResults.push({
+        name: 'Test 1: Delete removes link from array',
+        passed: passed,
+        message: passed 
+          ? `Link successfully removed from array (${initialCount} → ${finalCount})`
+          : `Failed: Expected array to go from 1 to 0, got ${initialCount} → ${finalCount}`
+      });
+    }
+
+    function test2_DeleteRemovesFromStorage() {
+      // Clear storage
+      localStorage.removeItem(STORAGE_KEY);
+      
+      const manager = new QuickLinksManager(document.createElement('div'));
+      manager.links = [];
+      
+      // Add a link
+      const linkId = manager.addLink('https://example.com', 'Example');
+      
+      // Verify it's in storage
+      let storedLinks = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const beforeCount = storedLinks ? storedLinks.length : 0;
+      
+      // Delete the link
+      manager.deleteLink(linkId);
+      
+      // Verify it's removed from storage
+      storedLinks = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const afterCount = storedLinks ? storedLinks.length : 0;
+      
+      const passed = beforeCount === 1 && afterCount === 0;
+      testResults.push({
+        name: 'Test 2: Delete removes link from Local Storage (Requirement 9.4)',
+        passed: passed,
+        message: passed 
+          ? `Link successfully removed from Local Storage (${beforeCount} → ${afterCount})`
+          : `Failed: Expected storage to go from 1 to 0, got ${beforeCount} → ${afterCount}`
+      });
+    }
+
+    function test3_DeleteUpdatesUI() {
+      // Create a container with proper structure
+      const container = document.createElement('div');
+      const linksList = document.createElement('div');
+      linksList.id = 'links-list';
+      container.appendChild(linksList);
+      
+      const manager = new QuickLinksManager(container);
+      manager.linksList = linksList;
+      manager.links = [];
+      
+      // Add a link
+      const linkId = manager.addLink('https://example.com', 'Example');
+      
+      // Check UI before deletion
+      const beforeElements = linksList.querySelectorAll('.link-item').length;
+      
+      // Delete the link
+      manager.deleteLink(linkId);
+      
+      // Check UI after deletion
+      const afterElements = linksList.querySelectorAll('.link-item').length;
+      
+      const passed = beforeElements === 1 && afterElements === 0;
+      testResults.push({
+        name: 'Test 3: Delete updates UI',
+        passed: passed,
+        message: passed 
+          ? `UI successfully updated (${beforeElements} → ${afterElements} link elements)`
+          : `Failed: Expected UI elements to go from 1 to 0, got ${beforeElements} → ${afterElements}`
+      });
+    }
+
+    function test4_DeleteNonExistentLink() {
+      const manager = new QuickLinksManager(document.createElement('div'));
+      manager.links = [];
+      
+      // Try to delete a non-existent link
+      const result = manager.deleteLink('non-existent-id');
+      
+      const passed = result === false;
+      testResults.push({
+        name: 'Test 4: Delete non-existent link returns false',
+        passed: passed,
+        message: passed 
+          ? 'Correctly returned false for non-existent link'
+          : `Failed: Expected false, got ${result}`
+      });
+    }
+
+    function test5_MultipleDeletions() {
+      localStorage.removeItem(STORAGE_KEY);
+      
+      const manager = new QuickLinksManager(document.createElement('div'));
+      manager.links = [];
+      
+      // Add multiple links
+      const id1 = manager.addLink('https://example1.com', 'Example 1');
+      const id2 = manager.addLink('https://example2.com', 'Example 2');
+      const id3 = manager.addLink('https://example3.com', 'Example 3');
+      
+      // Delete middle link
+      manager.deleteLink(id2);
+      
+      // Verify storage
+      let storedLinks = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const afterFirstDelete = storedLinks ? storedLinks.length : 0;
+      
+      // Delete another link
+      manager.deleteLink(id1);
+      storedLinks = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const afterSecondDelete = storedLinks ? storedLinks.length : 0;
+      
+      // Verify remaining link is correct
+      const remainingLink = manager.links[0];
+      const correctLinkRemains = remainingLink && remainingLink.id === id3;
+      
+      const passed = afterFirstDelete === 2 && afterSecondDelete === 1 && correctLinkRemains;
+      testResults.push({
+        name: 'Test 5: Multiple deletions work correctly',
+        passed: passed,
+        message: passed 
+          ? 'Multiple deletions work correctly, storage updated each time'
+          : `Failed: Expected 3→2→1 links, got 3→${afterFirstDelete}→${afterSecondDelete}. Correct link remains: ${correctLinkRemains}`
+      });
+    }
+  </script>
+</body>
+</html>

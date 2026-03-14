@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .pass { color: green; }
+    .fail { color: red; }
+    h2 { color: #333; }
+    pre { background: #f5f5f5; padding: 10px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>Task Manager Test Suite</h1>
+  <div id="test-results"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Test utilities
+    function assert(condition, message) {
+      if (condition) {
+        return `<div class="pass">✓ ${message}</div>`;
+      } else {
+        return `<div class="fail">✗ ${message}</div>`;
+      }
+    }
+
+    function runTests() {
+      const results = [];
+      
+      // Clear localStorage before tests
+      localStorage.clear();
+
+      // Test 1: Task Creation
+      results.push('<div class="test-section"><h2>Test 1: Task Creation</h2>');
+      const task1 = new Task('Buy groceries');
+      results.push(assert(task1.text === 'Buy groceries', 'Task text is set correctly'));
+      results.push(assert(task1.completed === false, 'Task starts as not completed'));
+      results.push(assert(task1.id !== null, 'Task has an ID'));
+      results.push(assert(task1.createdAt !== null, 'Task has createdAt timestamp'));
+      results.push('</div>');
+
+      // Test 2: Task Validation
+      results.push('<div class="test-section"><h2>Test 2: Task Validation</h2>');
+      const validTask = new Task('Valid task');
+      const emptyTask = new Task('   ');
+      results.push(assert(validTask.validate() === true, 'Valid task passes validation'));
+      results.push(assert(emptyTask.validate() === false, 'Empty task fails validation'));
+      results.push('</div>');
+
+      // Test 3: Task Toggle
+      results.push('<div class="test-section"><h2>Test 3: Task Toggle</h2>');
+      const task2 = new Task('Test toggle');
+      results.push(assert(task2.completed === false, 'Task starts incomplete'));
+      task2.toggle();
+      results.push(assert(task2.completed === true, 'Task toggles to complete'));
+      task2.toggle();
+      results.push(assert(task2.completed === false, 'Task toggles back to incomplete'));
+      results.push('</div>');
+
+      // Test 4: Task Update Text
+      results.push('<div class="test-section"><h2>Test 4: Task Update Text</h2>');
+      const task3 = new Task('Original text');
+      const success1 = task3.updateText('Updated text');
+      results.push(assert(success1 === true, 'Valid text update succeeds'));
+      results.push(assert(task3.text === 'Updated text', 'Task text is updated'));
+      const success2 = task3.updateText('   ');
+      results.push(assert(success2 === false, 'Empty text update fails'));
+      results.push(assert(task3.text === 'Updated text', 'Task text remains unchanged after failed update'));
+      results.push('</div>');
+
+      // Test 5: TaskManager - Add Task
+      results.push('<div class="test-section"><h2>Test 5: TaskManager - Add Task</h2>');
+      const container = document.createElement('div');
+      const taskManager = new TaskManager(container);
+      const taskId = taskManager.addTask('First task');
+      results.push(assert(taskId !== null, 'addTask returns task ID'));
+      results.push(assert(taskManager.tasks.length === 1, 'Task is added to tasks array'));
+      results.push(assert(taskManager.tasks[0].text === 'First task', 'Task text is correct'));
+      results.push('</div>');
+
+      // Test 6: TaskManager - Reject Empty Task
+      results.push('<div class="test-section"><h2>Test 6: TaskManager - Reject Empty Task</h2>');
+      const emptyId = taskManager.addTask('   ');
+      results.push(assert(emptyId === null, 'Empty task returns null'));
+      results.push(assert(taskManager.tasks.length === 1, 'Empty task is not added to array'));
+      results.push('</div>');
+
+      // Test 7: TaskManager - Edit Task
+      results.push('<div class="test-section"><h2>Test 7: TaskManager - Edit Task</h2>');
+      const editSuccess = taskManager.editTask(taskId, 'Updated task text');
+      results.push(assert(editSuccess === true, 'Edit task succeeds'));
+      results.push(assert(taskManager.tasks[0].text === 'Updated task text', 'Task text is updated'));
+      results.push('</div>');
+
+      // Test 8: TaskManager - Toggle Task
+      results.push('<div class="test-section"><h2>Test 8: TaskManager - Toggle Task</h2>');
+      const toggleSuccess = taskManager.toggleTaskComplete(taskId);
+      results.push(assert(toggleSuccess === true, 'Toggle succeeds'));
+      results.push(assert(taskManager.tasks[0].completed === true, 'Task is marked complete'));
+      taskManager.toggleTaskComplete(taskId);
+      results.push(assert(taskManager.tasks[0].completed === false, 'Task is marked incomplete'));
+      results.push('</div>');
+
+      // Test 9: TaskManager - Delete Task
+      results.push('<div class="test-section"><h2>Test 9: TaskManager - Delete Task</h2>');
+      const deleteSuccess = taskManager.deleteTask(taskId);
+      results.push(assert(deleteSuccess === true, 'Delete succeeds'));
+      results.push(assert(taskManager.tasks.length === 0, 'Task is removed from array'));
+      results.push('</div>');
+
+      // Test 10: TaskManager - Local Storage Persistence
+      results.push('<div class="test-section"><h2>Test 10: TaskManager - Local Storage Persistence</h2>');
+      const manager1 = new TaskManager(document.createElement('div'));
+      const id1 = manager1.addTask('Persistent task');
+      results.push(assert(id1 !== null, 'Task added to first manager'));
+      
+      // Create new manager and load tasks
+      const manager2 = new TaskManager(document.createElement('div'));
+      manager2.loadTasks();
+      results.push(assert(manager2.tasks.length === 1, 'Task loaded in second manager'));
+      results.push(assert(manager2.tasks[0].text === 'Persistent task', 'Task text persisted correctly'));
+      results.push('</div>');
+
+      // Test 11: TaskManager - Unique IDs
+      results.push('<div class="test-section"><h2>Test 11: TaskManager - Unique IDs</h2>');
+      const manager3 = new TaskManager(document.createElement('div'));
+      const id2 = manager3.addTask('Task 1');
+      const id3 = manager3.addTask('Task 2');
+      const id4 = manager3.addTask('Task 3');
+      results.push(assert(id2 !== id3, 'First and second IDs are unique'));
+      results.push(assert(id3 !== id4, 'Second and third IDs are unique'));
+      results.push(assert(id2 !== id4, 'First and third IDs are unique'));
+      results.push('</div>');
+
+      // Display results
+      document.getElementById('test-results').innerHTML = results.join('');
+    }
+
+    // Run tests when page loads
+    runTests();
+  </script>
+</body>
+</html>

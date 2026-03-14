@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkpoint 7 - All Components Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .test-header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .summary.all-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .summary.has-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .component-demo {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🔍 Checkpoint 7: All Components Independence Test</h1>
+        <p>This test verifies that all four main components work correctly and independently:</p>
+        <ul>
+            <li>Greeting Widget</li>
+            <li>Focus Timer</li>
+            <li>Task Manager</li>
+            <li>Quick Links Manager</li>
+        </ul>
+    </div>
+
+    <div id="test-results"></div>
+
+    <!-- Hidden test containers -->
+    <div style="display: none;">
+        <div id="greeting-widget">
+            <div class="greeting-content">
+                <div class="time-display" id="time-display">--:-- --</div>
+                <div class="date-display" id="date-display">Loading...</div>
+                <div class="greeting-message" id="greeting-message">Welcome</div>
+            </div>
+        </div>
+        
+        <div id="timer-widget">
+            <div class="timer-display" id="timer-display">25:00</div>
+            <button id="timer-start">Start</button>
+            <button id="timer-stop">Stop</button>
+            <button id="timer-reset">Reset</button>
+            <div id="timer-status"></div>
+        </div>
+        
+        <div id="task-widget">
+            <input type="text" id="task-input" placeholder="Add a new task...">
+            <button id="add-task-btn">Add</button>
+            <div id="task-list"></div>
+        </div>
+        
+        <div id="links-widget">
+            <input type="url" id="link-url-input" placeholder="Enter URL...">
+            <input type="text" id="link-name-input" placeholder="Display name...">
+            <button id="add-link-btn">Add</button>
+            <div id="links-list"></div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const testResults = [];
+        
+        function addResult(component, testName, passed, message) {
+            testResults.push({ component, testName, passed, message });
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('test-results');
+            const components = ['Greeting Widget', 'Focus Timer', 'Task Manager', 'Quick Links Manager'];
+            
+            let html = '';
+            
+            components.forEach(component => {
+                const componentTests = testResults.filter(r => r.component === component);
+                const passCount = componentTests.filter(r => r.passed).length;
+                const failCount = componentTests.filter(r => !r.passed).length;
+                
+                html += `
+                    <div class="test-section">
+                        <h2>${component}</h2>
+                        <p><strong>Tests:</strong> ${componentTests.length} | 
+                           <strong>Passed:</strong> ${passCount} | 
+                           <strong>Failed:</strong> ${failCount}</p>
+                        ${componentTests.map(r => `
+                            <div class="test-result ${r.passed ? 'pass' : 'fail'}">
+                                ${r.passed ? '✓' : '✗'} ${r.testName}: ${r.message}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            });
+            
+            // Overall summary
+            const totalTests = testResults.length;
+            const totalPass = testResults.filter(r => r.passed).length;
+            const totalFail = testResults.filter(r => !r.passed).length;
+            const allPass = totalFail === 0;
+            
+            html = `
+                <div class="summary ${allPass ? 'all-pass' : 'has-fail'}">
+                    ${allPass ? '✓ ALL TESTS PASSED!' : '✗ SOME TESTS FAILED'}
+                    <br>
+                    Total: ${totalTests} | Passed: ${totalPass} | Failed: ${totalFail}
+                </div>
+            ` + html;
+            
+            resultsDiv.innerHTML = html;
+            
+            // Log to console
+            console.log('=== CHECKPOINT 7 TEST RESULTS ===');
+            console.log(`Total: ${totalTests} | Passed: ${totalPass} | Failed: ${totalFail}`);
+            console.log('Details:', testResults);
+        }
+
+        // Run all tests
+        document.addEventListener('DOMContentLoaded', () => {
+            // Clear localStorage for clean test
+            localStorage.clear();
+            
+            setTimeout(() => {
+                runGreetingWidgetTests();
+                runFocusTimerTests();
+                runTaskManagerTests();
+                runQuickLinksTests();
+                
+                // Display results after all tests complete
+                setTimeout(() => {
+                    displayResults();
+                }, 3000);
+            }, 100);
+        });
+
+        // ===== GREETING WIDGET TESTS =====
+        function runGreetingWidgetTests() {
+            const component = 'Greeting Widget';
+            
+            try {
+                // Test 1: Initialization
+                const container = document.getElementById('greeting-widget');
+                const widget = new GreetingWidget(container);
+                widget.init();
+                addResult(component, 'Initialization', true, 'Widget initialized successfully');
+                
+                // Test 2: Time display format
+                const timeDisplay = document.getElementById('time-display');
+                const timeText = timeDisplay.textContent;
+                const hasAMPM = timeText.includes('AM') || timeText.includes('PM');
+                const hasColon = timeText.includes(':');
+                addResult(component, 'Time format', hasAMPM && hasColon, 
+                    `Time displays in 12-hour format: "${timeText}"`);
+                
+                // Test 3: Date display format
+                const dateDisplay = document.getElementById('date-display');
+                const dateText = dateDisplay.textContent;
+                const notLoading = dateText !== 'Loading...';
+                const hasComma = dateText.includes(',');
+                addResult(component, 'Date format', notLoading && hasComma, 
+                    `Date displays correctly: "${dateText}"`);
+                
+                // Test 4: Greeting message
+                const greetingDisplay = document.getElementById('greeting-message');
+                const greetingText = greetingDisplay.textContent;
+                const validGreetings = ['Good Morning', 'Good Afternoon', 'Good Evening', 'Good Night'];
+                const hasValidGreeting = validGreetings.includes(greetingText);
+                addResult(component, 'Greeting message', hasValidGreeting, 
+                    `Greeting is valid: "${greetingText}"`);
+                
+                // Test 5: Time-based greeting logic
+                const testWidget = new GreetingWidget(container);
+                const morningDate = new Date(2024, 0, 15, 9, 0);
+                const afternoonDate = new Date(2024, 0, 15, 14, 0);
+                const eveningDate = new Date(2024, 0, 15, 19, 0);
+                const nightDate = new Date(2024, 0, 15, 22, 0);
+                
+                const morningOk = testWidget.getTimeBasedGreeting(morningDate) === 'Good Morning';
+                const afternoonOk = testWidget.getTimeBasedGreeting(afternoonDate) === 'Good Afternoon';
+                const eveningOk = testWidget.getTimeBasedGreeting(eveningDate) === 'Good Evening';
+                const nightOk = testWidget.getTimeBasedGreeting(nightDate) === 'Good Night';
+                
+                addResult(component, 'Greeting logic', morningOk && afternoonOk && eveningOk && nightOk, 
+                    'All time-based greetings work correctly');
+                
+                // Clean up
+                widget.destroy();
+                
+            } catch (error) {
+                addResult(component, 'Error', false, `Exception: ${error.message}`);
+            }
+        }
+
+        // ===== FOCUS TIMER TESTS =====
+        function runFocusTimerTests() {
+            const component = 'Focus Timer';
+            
+            try {
+                // Test 1: Initialization
+                const container = document.getElementById('timer-widget');
+                const timer = new FocusTimer(container);
+                timer.init();
+                
+                const initOk = timer.duration === 1500 && timer.remainingTime === 1500 && !timer.isRunning;
+                addResult(component, 'Initialization', initOk, 
+                    'Timer initialized with 25 minutes (1500 seconds)');
+                
+                // Test 2: Display format
+                const displayText = document.getElementById('timer-display').textContent;
+                addResult(component, 'Display format', displayText === '25:00', 
+                    `Display shows correct format: "${displayText}"`);
+                
+                // Test 3: Start functionality
+                timer.start();
+                const startOk = timer.isRunning === true && timer.intervalId !== null;
+                addResult(component, 'Start function', startOk, 
+                    'Timer starts and sets isRunning to true');
+                
+                // Test 4: Stop functionality (after brief delay)
+                setTimeout(() => {
+                    const timeAfterStart = timer.remainingTime;
+                    timer.stop();
+                    const stopOk = timer.isRunning === false && timer.remainingTime < 1500;
+                    addResult(component, 'Stop function', stopOk, 
+                        `Timer stops and preserves time (${timer.remainingTime}s)`);
+                    
+                    // Test 5: Reset functionality
+                    timer.reset();
+                    const resetOk = timer.remainingTime === 1500 && !timer.isRunning;
+                    addResult(component, 'Reset function', resetOk, 
+                        'Timer resets to 1500 seconds');
+                    
+                    // Test 6: Countdown behavior
+                    timer.remainingTime = 2;
+                    timer.start();
+                    setTimeout(() => {
+                        const countdownOk = timer.remainingTime < 2;
+                        addResult(component, 'Countdown behavior', countdownOk, 
+                            `Timer counts down correctly (now at ${timer.remainingTime}s)`);
+                        timer.stop();
+                    }, 1500);
+                    
+                }, 1000);
+                
+            } catch (error) {
+                addResult(component, 'Error', false, `Exception: ${error.message}`);
+            }
+        }
+
+        // ===== TASK MANAGER TESTS =====
+        function runTaskManagerTests() {
+            const component = 'Task Manager';
+            
+            try {
+                // Test 1: Initialization
+                const container = document.getElementById('task-widget');
+                const manager = new TaskManager(container);
+                manager.init();
+                addResult(component, 'Initialization', Array.isArray(manager.tasks), 
+                    'TaskManager initialized with tasks array');
+                
+                // Test 2: Add task
+                const taskId = manager.addTask('Test task');
+                const addOk = taskId !== null && manager.tasks.length === 1;
+                addResult(component, 'Add task', addOk, 
+                    `Task added successfully (ID: ${taskId})`);
+                
+                // Test 3: Reject empty task
+                const emptyId = manager.addTask('   ');
+                const rejectOk = emptyId === null && manager.tasks.length === 1;
+                addResult(component, 'Reject empty task', rejectOk, 
+                    'Empty task rejected correctly');
+                
+                // Test 4: Edit task
+                const editOk = manager.editTask(taskId, 'Updated task');
+                const textOk = manager.tasks[0].text === 'Updated task';
+                addResult(component, 'Edit task', editOk && textOk, 
+                    'Task edited successfully');
+                
+                // Test 5: Toggle completion
+                manager.toggleTaskComplete(taskId);
+                const toggleOk = manager.tasks[0].completed === true;
+                addResult(component, 'Toggle completion', toggleOk, 
+                    'Task completion toggled successfully');
+                
+                // Test 6: Delete task
+                const deleteOk = manager.deleteTask(taskId);
+                const removedOk = manager.tasks.length === 0;
+                addResult(component, 'Delete task', deleteOk && removedOk, 
+                    'Task deleted successfully');
+                
+                // Test 7: Persistence
+                const manager2 = new TaskManager(container);
+                const id2 = manager2.addTask('Persistent task');
+                const manager3 = new TaskManager(container);
+                manager3.loadTasks();
+                const persistOk = manager3.tasks.length === 1 && 
+                                 manager3.tasks[0].text === 'Persistent task';
+                addResult(component, 'Local Storage persistence', persistOk, 
+                    'Tasks persist across instances');
+                
+                // Test 8: Unique IDs
+                const id3 = manager3.addTask('Task 2');
+                const id4 = manager3.addTask('Task 3');
+                const uniqueOk = id2 !== id3 && id3 !== id4 && id2 !== id4;
+                addResult(component, 'Unique IDs', uniqueOk, 
+                    'All task IDs are unique');
+                
+            } catch (error) {
+                addResult(component, 'Error', false, `Exception: ${error.message}`);
+            }
+        }
+
+        // ===== QUICK LINKS TESTS =====
+        function runQuickLinksTests() {
+            const component = 'Quick Links Manager';
+            
+            try {
+                // Test 1: Initialization
+                const container = document.getElementById('links-widget');
+                const manager = new QuickLinksManager(container);
+                manager.init();
+                addResult(component, 'Initialization', Array.isArray(manager.links), 
+                    'QuickLinksManager initialized with links array');
+                
+                // Test 2: Add valid link
+                const linkId = manager.addLink('https://github.com', 'GitHub');
+                const addOk = linkId !== null && manager.links.length === 1;
+                addResult(component, 'Add valid link', addOk, 
+                    `Link added successfully (ID: ${linkId})`);
+                
+                // Test 3: Reject empty URL
+                const emptyUrlId = manager.addLink('', 'Test');
+                const rejectUrlOk = emptyUrlId === null && manager.links.length === 1;
+                addResult(component, 'Reject empty URL', rejectUrlOk, 
+                    'Link with empty URL rejected');
+                
+                // Test 4: Reject empty display name
+                const emptyNameId = manager.addLink('https://example.com', '');
+                const rejectNameOk = emptyNameId === null && manager.links.length === 1;
+                addResult(component, 'Reject empty name', rejectNameOk, 
+                    'Link with empty display name rejected');
+                
+                // Test 5: Reject invalid URL
+                const invalidId = manager.addLink('not-a-url', 'Test');
+                const rejectInvalidOk = invalidId === null && manager.links.length === 1;
+                addResult(component, 'Reject invalid URL', rejectInvalidOk, 
+                    'Link with invalid URL format rejected');
+                
+                // Test 6: URL validation
+                const validUrlOk = manager.validateUrl('https://google.com') === true;
+                const invalidUrlOk = manager.validateUrl('invalid') === false;
+                addResult(component, 'URL validation', validUrlOk && invalidUrlOk, 
+                    'URL validation works correctly');
+                
+                // Test 7: Delete link
+                const deleteOk = manager.deleteLink(linkId);
+                const removedOk = manager.links.length === 0;
+                addResult(component, 'Delete link', deleteOk && removedOk, 
+                    'Link deleted successfully');
+                
+                // Test 8: Persistence
+                const manager2 = new QuickLinksManager(container);
+                const id2 = manager2.addLink('https://example.com', 'Example');
+                const manager3 = new QuickLinksManager(container);
+                manager3.loadLinks();
+                const persistOk = manager3.links.length === 1 && 
+                                 manager3.links[0].url === 'https://example.com';
+                addResult(component, 'Local Storage persistence', persistOk, 
+                    'Links persist across instances');
+                
+                // Test 9: Unique IDs
+                const id3 = manager3.addLink('https://google.com', 'Google');
+                const id4 = manager3.addLink('https://github.com', 'GitHub');
+                const uniqueOk = id2 !== id3 && id3 !== id4 && id2 !== id4;
+                addResult(component, 'Unique IDs', uniqueOk, 
+                    'All link IDs are unique');
+                
+            } catch (error) {
+                addResult(component, 'Error', false, `Exception: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

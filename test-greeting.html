@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting Widget Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Greeting Widget Test</h1>
+    <div id="test-results"></div>
+    
+    <script src="js/app.js"></script>
+    <script>
+        // Test TimeUtils functionality
+        function runTests() {
+            const results = [];
+            
+            // Test 1: Time format consistency (Property 1)
+            const testDate1 = new Date(2024, 0, 15, 14, 30); // 2:30 PM
+            const timeStr = TimeUtils.formatTime12Hour(testDate1);
+            const hasAmPm = timeStr.includes('AM') || timeStr.includes('PM');
+            const is12Hour = !timeStr.includes('13') && !timeStr.includes('14');
+            results.push({
+                name: 'Time Format Consistency',
+                pass: hasAmPm && is12Hour,
+                details: `Time: ${timeStr}, Has AM/PM: ${hasAmPm}, Is 12-hour: ${is12Hour}`
+            });
+            
+            // Test 2: Date format completeness (Property 2)
+            const dateStr = TimeUtils.formatDate(testDate1);
+            const hasWeekday = /Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday/.test(dateStr);
+            const hasMonth = /January|February|March|April|May|June|July|August|September|October|November|December/.test(dateStr);
+            const hasDay = /\d+/.test(dateStr);
+            results.push({
+                name: 'Date Format Completeness',
+                pass: hasWeekday && hasMonth && hasDay,
+                details: `Date: ${dateStr}, Has weekday: ${hasWeekday}, Has month: ${hasMonth}, Has day: ${hasDay}`
+            });
+            
+            // Test 3: Time-based greeting accuracy (Property 3)
+            const greetingTests = [
+                { hour: 8, expected: 'Good Morning' },
+                { hour: 14, expected: 'Good Afternoon' },
+                { hour: 19, expected: 'Good Evening' },
+                { hour: 23, expected: 'Good Night' },
+                { hour: 2, expected: 'Good Night' }
+            ];
+            
+            let greetingTestsPassed = 0;
+            greetingTests.forEach(test => {
+                const testDate = new Date(2024, 0, 15, test.hour, 0);
+                const greeting = TimeUtils.getTimeBasedGreeting(testDate);
+                if (greeting === test.expected) {
+                    greetingTestsPassed++;
+                }
+            });
+            
+            results.push({
+                name: 'Time-based Greeting Accuracy',
+                pass: greetingTestsPassed === greetingTests.length,
+                details: `Passed ${greetingTestsPassed}/${greetingTests.length} greeting tests`
+            });
+            
+            // Display results
+            const resultsDiv = document.getElementById('test-results');
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.pass ? 'pass' : 'fail'}`;
+                div.innerHTML = `
+                    <strong>${result.name}:</strong> ${result.pass ? 'PASS' : 'FAIL'}<br>
+                    <small>${result.details}</small>
+                `;
+                resultsDiv.appendChild(div);
+            });
+            
+            const passedCount = results.filter(r => r.pass).length;
+            const totalCount = results.length;
+            
+            const summary = document.createElement('div');
+            summary.className = `test-result ${passedCount === totalCount ? 'pass' : 'fail'}`;
+            summary.innerHTML = `<strong>Summary: ${passedCount}/${totalCount} tests passed</strong>`;
+            resultsDiv.appendChild(summary);
+        }
+        
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>
